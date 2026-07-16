@@ -4,7 +4,7 @@ Fecha: 2026-07-12 | Estado: Aceptado
 
 ## Contexto
 
-El widget está destinado a embeberse en `polaria.tech`. El proyecto usa Tailwind CSS, cuyo *preflight* resetea estilos base globalmente con selectores `*`. Corriendo como app standalone (`npm run dev`, `index.html` propio) esto es invisible, pero si el bundle CSS se inyectara tal cual en el documento del sitio anfitrión, resetearía el CSS de *todo* `polaria.tech`, y el CSS del sitio podría filtrarse hacia adentro del widget. Un informe de auditoría (`auditoria-widget-react.md`) marcó esto como bloqueante específicamente para el objetivo de embeberse, aunque no urgente mientras el proyecto siguiera en fase de tester único.
+El widget está destinado a embeberse en `polaria.tech`. El proyecto usa Tailwind CSS, cuyo *preflight* resetea estilos base globalmente con selectores `*`. Corriendo como app standalone (`npm run dev`, `index.html` propio) esto es invisible, pero si el bundle CSS se inyectara tal cual en el documento del sitio anfitrión, resetearía el CSS de *todo* `polaria.tech`, y el CSS del sitio podría filtrarse hacia adentro del widget. Un informe de auditoría técnica (documento interno, no versionado en este repositorio) marcó esto como bloqueante específicamente para el objetivo de embeberse, aunque no urgente mientras el proyecto siguiera en fase de tester único.
 
 ## Opciones consideradas
 

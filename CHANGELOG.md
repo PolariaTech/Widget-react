@@ -16,6 +16,12 @@ Lado cliente de POL-72 (autenticación real por visitante), en paralelo con POL-
 - El payload saliente hacia n8n dejó de imitar la envoltura del webhook de WhatsApp Business (`entry[].changes[].value.messages[]`) y ahora es un body plano `{ message_text, message_type }`.
 - Se eliminó `USER_PHONE`, el identificador de remitente fijo y compartido por todos los visitantes del widget — la identidad ahora viaja en el JWT, no en el body del mensaje.
 - Cuando el usuario adjunta una imagen junto con texto, ahora se envían dos mensajes secuenciales a n8n (imagen, luego texto) en vez de uno combinado, porque el nuevo body plano no tiene un campo de caption aparte; cada uno genera su propia respuesta de Mateo.
+- Se removió el arnés de pruebas standalone (`App.tsx`/`index.html`): ya no hay fondo oscuro ni texto de demo — `npm run dev` muestra solo el botón flotante, tal como se vería embebido en un sitio host.
+- El fondo del botón flotante (`ChatButton`) pasó de un degradado translúcido (dependía del fondo oscuro de la página del arnés para verse bien) a un fondo propio opaco — el botón ya no depende del color de fondo de la página donde se embeba.
+
+### Fixed
+
+- Se agregó `cursor-pointer` a todos los botones del widget (Tailwind resetea el cursor de `<button>` a `default` en el preflight).
 
 ### Security
 
@@ -23,7 +29,7 @@ Lado cliente de POL-72 (autenticación real por visitante), en paralelo con POL-
 
 ## [0.1.0] — 2026-07-12
 
-Primera versión endurecida del widget tras una auditoría técnica de 6 agentes en paralelo (`auditoria-widget-react.md`), ejecutada en 4 fases más un apéndice de hallazgos adicionales. El widget pasa de "prototipo funcional" a "prototipo con los bloqueantes de producción resueltos" (quedan pendientes puntos fuera del alcance de este repositorio — ver `docs/SEGURIDAD.md` y `docs/ENTORNOS.md`).
+Primera versión endurecida del widget tras una auditoría técnica de 6 agentes en paralelo (documento interno, no versionado en este repositorio), ejecutada en 4 fases más un apéndice de hallazgos adicionales. El widget pasa de "prototipo funcional" a "prototipo con los bloqueantes de producción resueltos" (quedan pendientes puntos fuera del alcance de este repositorio — ver `docs/SEGURIDAD.md` y `docs/ENTORNOS.md`).
 
 ### Added
 

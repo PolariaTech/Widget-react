@@ -2,9 +2,9 @@
 
 Widget de chat de soporte para **Mateo**, el asistente de IA de Polaria en WhatsApp — esta es la migración a React del prototipo, pensada para poder incrustarse en `polaria.tech` como un componente aislado (Shadow DOM) que no interfiere con el CSS del sitio anfitrión. El widget conversa con Mateo a través del mismo workflow de n8n que atiende WhatsApp, permite adjuntar imágenes (subidas a Cloudinary) y guarda el historial de conversaciones en el navegador del visitante.
 
-[![Build](https://img.shields.io/badge/build-manual-lightgrey)]() [![Tests](https://img.shields.io/badge/tests-33%2F33-brightgreen)]() [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)]() [![i18n](https://img.shields.io/badge/i18n-es%20%7C%20en-blueviolet)]()
+[![Build](https://img.shields.io/badge/build-manual-lightgrey)]() [![Tests](https://img.shields.io/badge/tests-56%2F56-brightgreen)]() [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)]() [![i18n](https://img.shields.io/badge/i18n-es%20%7C%20en-blueviolet)]()
 
-> Estado del proyecto: prototipo funcional, auditado y con las 4 fases de hardening del informe de auditoría completas (`auditoria-widget-react.md`, en la raíz de este repositorio). Pendiente antes de producción real: empaquetado como script distribuible, coordinación de autenticación del webhook con el equipo de n8n, y confirmación de límites del preset de Cloudinary en consola — ver `docs/SEGURIDAD.md`.
+> Estado del proyecto: prototipo funcional, con varias fases de hardening ya aplicadas. Pendiente antes de producción real: empaquetado como script distribuible, que n8n haga cumplir el JWT del lado del servidor (POL-71) y confirmación de límites del preset de Cloudinary en consola — ver `docs/SEGURIDAD.md`.
 
 ## Stack tecnológico
 
@@ -56,7 +56,7 @@ Abre automáticamente en **http://localhost:5173**. Verás una página en blanco
 npm run test
 ```
 
-Corre la suite de Vitest una vez (33 tests en 4 archivos, todos sobre módulos puros de `src/lib/`: `format`, `fileSignature`, `cloudinary`, `storage`). Resultado esperado: `Test Files 4 passed (4)` / `Tests 33 passed (33)` en menos de 2 segundos. Ver `docs/TESTING.md` para la convención de nombres y cómo escribir un test nuevo.
+Corre la suite de Vitest una vez (56 tests en 6 archivos, todos sobre módulos puros de `src/lib/`: `format`, `fileSignature`, `cloudinary`, `storage`, `authToken`, `webhook`). Resultado esperado: `Test Files 6 passed (6)` / `Tests 56 passed (56)` en menos de 2 segundos. Ver `docs/TESTING.md` para la convención de nombres y cómo escribir un test nuevo.
 
 Otros comandos útiles:
 
@@ -72,12 +72,11 @@ El widget lee su configuración de `import.meta.env.VITE_*` (Vite carga `.env.de
 
 ```bash
 VITE_N8N_WEBHOOK_URL=https://polariatech.app.n8n.cloud/webhook/test-mateo-support
-VITE_PHONE_NUMBER_ID=1104260132766227
 VITE_CLOUDINARY_CLOUD_NAME=ujssaxx6
 VITE_CLOUDINARY_UPLOAD_PRESET=mateo_test_unsigned
 ```
 
-Ninguna de estas es secreta hoy (el webhook no tiene autenticación y el preset de Cloudinary es *unsigned* por diseño — ver `docs/SEGURIDAD.md`), pero **sí son específicas de ambiente**: no reutilices los valores de desarrollo en producción sin coordinarlo primero con el equipo de n8n.
+Ninguna de estas es un secreto de build (no hay API keys ni credenciales aquí): la URL del webhook va embebida en el bundle de JS de cualquier app cliente y no hay forma de ocultarla del todo (mitigación = poder rotarla, no mantenerla en secreto), y el preset de Cloudinary es *unsigned* por diseño. Pero **cada llamada al webhook sí lleva autenticación** — el widget adjunta `Authorization: Bearer <jwt>` en cada request (`src/lib/authToken.ts`, POL-72); ver `docs/SEGURIDAD.md` para el estado real de si el lado de n8n ya lo hace cumplir. Estos valores **sí son específicos de ambiente**: no reutilices los de desarrollo en producción sin coordinarlo primero con el equipo de n8n.
 
 ## Estructura del proyecto
 
@@ -104,7 +103,6 @@ Widget-react/
 │   ├── ENTORNOS.md
 │   ├── DOCUMENTACION_CHECKLIST.md
 │   └── adr/            # Architecture Decision Records
-├── auditoria-widget-react.md   # Informe de auditoría (6 agentes) que originó las Fases 0-3
 ├── CONTRIBUTING.md
 └── CHANGELOG.md
 ```
@@ -124,7 +122,6 @@ Widget-react/
 | [`docs/adr/`](docs/adr/) | Decisiones arquitecturales y por qué se tomaron |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Convención de ramas, commits, Definition of Done |
 | [`CHANGELOG.md`](CHANGELOG.md) | Historial de cambios del widget |
-| [`auditoria-widget-react.md`](auditoria-widget-react.md) | Informe original de auditoría (Fases 0-3) |
 
 ## Troubleshooting rápido
 

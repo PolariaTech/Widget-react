@@ -4,7 +4,7 @@ Fecha: 2026-07-12 | Estado: Aceptado
 
 ## Contexto
 
-Un informe de auditoría (`auditoria-widget-react.md`) identificó como hallazgo crítico que `newWamid()` (`src/lib/webhook.ts`) llamaba a `crypto.randomUUID()` de forma síncrona y sin protección, para generar el identificador de cada mensaje saliente. `crypto.randomUUID()` no está disponible en contextos no-HTTPS ni en navegadores viejos — un escenario realista para un widget embebible de terceros, donde no se controla el contexto de despliegue del sitio anfitrión. Si la API no existe, la excepción interrumpía `sendMessage` antes de llegar a `setIsSending(false)`, dejando el botón de enviar deshabilitado permanentemente desde el primer intento, sin ningún error visible ni forma de recuperarse sin recargar la página.
+Un informe de auditoría técnica (documento interno, no versionado en este repositorio) identificó como hallazgo crítico que `newWamid()` (entonces en `src/lib/webhook.ts`) llamaba a `crypto.randomUUID()` de forma síncrona y sin protección, para generar el identificador de cada mensaje saliente. `crypto.randomUUID()` no está disponible en contextos no-HTTPS ni en navegadores viejos — un escenario realista para un widget embebible de terceros, donde no se controla el contexto de despliegue del sitio anfitrión. Si la API no existe, la excepción interrumpía `sendMessage` antes de llegar a `setIsSending(false)`, dejando el botón de enviar deshabilitado permanentemente desde el primer intento, sin ningún error visible ni forma de recuperarse sin recargar la página.
 
 ## Opciones consideradas
 
@@ -29,4 +29,4 @@ Opción 2. `newWamid()` genera `'wamid.' + Date.now().toString(36) + Math.random
 
 ## Notas de seguimiento
 
-Ninguna — este generador es adecuado mientras el `wamid` siga siendo solo un identificador de correlación no expuesto como control de seguridad.
+`newWamid()` y el campo `wamid` fueron eliminados en la reescritura de payload de POL-71/72 (el body plano actual — `{ message_text, message_type }` — no lleva ningún identificador de mensaje; ver `docs/INTEGRACIONES.md`). La decisión de este ADR sigue vigente igual: el mismo patrón (`Date.now().toString(36) + Math.random().toString(36)`) es el que usa `createConversation()` en `src/lib/storage.ts` para los IDs de conversación, que es donde queda concentrado hoy.
