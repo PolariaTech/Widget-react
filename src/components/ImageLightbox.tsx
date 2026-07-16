@@ -19,7 +19,7 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
       <img src={src} alt={t('lightboxAlt')} className="max-w-full max-h-full object-contain rounded-[10px] shadow-2xl" onClick={(e) => e.stopPropagation()} />
       <button
         onClick={onClose}
-        className="absolute top-[10px] right-[10px] w-[28px] h-[28px] rounded-[8px] flex items-center justify-center hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+        className="absolute top-[10px] right-[10px] w-[28px] h-[28px] rounded-[8px] flex items-center justify-center hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
         aria-label={t('lightboxClose')}
       >
         <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">

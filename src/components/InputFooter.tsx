@@ -140,7 +140,7 @@ export function InputFooter({ selectedImage, onImageSelected, onImageRemoved, on
               <span className="text-[11px] text-[rgba(248,248,246,0.6)] flex-1 truncate">{selectedImage.name}</span>
               <button
                 onClick={handleRemoveImage}
-                className="text-[rgba(248,248,246,0.35)] hover:text-[rgba(248,248,246,0.8)] transition-colors text-[18px] leading-none shrink-0"
+                className="text-[rgba(248,248,246,0.35)] hover:text-[rgba(248,248,246,0.8)] transition-colors text-[18px] leading-none shrink-0 cursor-pointer"
                 aria-label={t('removeImageAria')}
               >
                 ×
@@ -152,7 +152,7 @@ export function InputFooter({ selectedImage, onImageSelected, onImageRemoved, on
         <div className="bg-[rgba(248,248,246,0.04)] border border-[rgba(0,229,204,0.15)] rounded-[14px] flex gap-[8px] items-end px-[13px] py-[9px] w-full">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-[8px] w-[28px] h-[28px] flex items-center justify-center hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent shrink-0"
+            className="rounded-[8px] w-[28px] h-[28px] flex items-center justify-center hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent shrink-0 cursor-pointer"
             aria-label={t('attachImageAria')}
           >
             <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 14 14">
@@ -182,7 +182,7 @@ export function InputFooter({ selectedImage, onImageSelected, onImageRemoved, on
           <button
             onClick={handleSend}
             disabled={isSending}
-            className="bg-[rgba(0,229,204,0.15)] border border-[rgba(0,229,204,0.3)] rounded-[10px] w-[28px] h-[28px] flex items-center justify-center hover:bg-[rgba(0,229,204,0.28)] transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[rgba(0,229,204,0.15)]"
+            className="bg-[rgba(0,229,204,0.15)] border border-[rgba(0,229,204,0.3)] rounded-[10px] w-[28px] h-[28px] flex items-center justify-center hover:bg-[rgba(0,229,204,0.28)] transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[rgba(0,229,204,0.15)]"
             aria-label={t('sendMessageAria')}
           >
             {isSending ? (

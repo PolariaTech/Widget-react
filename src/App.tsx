@@ -3,7 +3,6 @@ import { ChatButton } from './components/ChatButton';
 import { ChatModal } from './components/ChatModal';
 import { useConversations } from './hooks/useConversations';
 import { useChat } from './hooks/useChat';
-import { t } from './i18n';
 
 const HIDE_ANIMATION_MS = 200;
 
@@ -75,14 +74,7 @@ function App() {
   }, [conv, chat]);
 
   return (
-    <div className="flex items-center justify-center relative overflow-hidden h-screen">
-      <div className="text-center text-gray-500 max-w-md px-4">
-        <h1 className="text-2xl font-medium text-white mb-2">{t('demoTitle')}</h1>
-        <p className="text-sm">
-          {t('demoDescriptionBefore')} <b>Mateo Support</b> {t('demoDescriptionAfter')}
-        </p>
-      </div>
-
+    <>
       {!isOpen && <ChatButton onClick={openChat} hasUnread={hasUnread} />}
 
       {isOpen && (
@@ -120,7 +112,7 @@ function App() {
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 

@@ -6,11 +6,6 @@
  * silencioso en producción.
  */
 const es = {
-  // App.tsx (placeholder del harness de pruebas standalone)
-  demoTitle: 'Prototipo de Chat Widget',
-  demoDescriptionBefore: 'Haz clic en el botón flotante en la esquina inferior derecha para abrir el panel de asistencia de',
-  demoDescriptionAfter: '.',
-
   // ChatButton.tsx
   chatButtonOpen: 'Abrir chat de soporte',
 

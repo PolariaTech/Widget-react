@@ -43,7 +43,7 @@ export function HistoryPanel({ conversations, currentConversationId, onSelect, o
     <div className="flex flex-col h-full overflow-hidden">
       <button
         onClick={onNewConversation}
-        className="w-full text-left px-[12px] py-[10px] text-[12px] font-medium text-[#00E5CC] hover:bg-[rgba(0,229,204,0.08)] transition-colors border-b border-[rgba(248,248,246,0.08)] flex items-center gap-[6px] shrink-0 focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+        className="w-full text-left px-[12px] py-[10px] text-[12px] font-medium text-[#00E5CC] hover:bg-[rgba(0,229,204,0.08)] transition-colors border-b border-[rgba(248,248,246,0.08)] flex items-center gap-[6px] shrink-0 focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
       >
         <svg className="w-[12px] h-[12px]" fill="none" viewBox="0 0 12 12">
           <path d="M6 1.5V10.5M1.5 6H10.5" stroke="#00E5CC" strokeLinecap="round" strokeWidth="1.3" />
@@ -67,7 +67,7 @@ export function HistoryPanel({ conversations, currentConversationId, onSelect, o
                 <button
                   onClick={() => onSelect(conv.id)}
                   aria-current={isActive ? 'true' : undefined}
-                  className="flex-1 min-w-0 text-left px-[12px] py-[9px] hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+                  className="flex-1 min-w-0 text-left px-[12px] py-[9px] hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
                 >
                   <p className="text-[12px] text-[rgba(248,248,246,0.85)] truncate">{title}</p>
                   <p className="text-[10px] text-[rgba(248,248,246,0.55)] mt-[2px]">{dateStr}</p>
@@ -75,7 +75,7 @@ export function HistoryPanel({ conversations, currentConversationId, onSelect, o
                 <button
                   onClick={() => void handleDelete(conv.id, title)}
                   aria-label={t('historyDeleteItemAria', { title })}
-                  className="shrink-0 mr-[8px] w-[24px] h-[24px] flex items-center justify-center rounded-[6px] text-[rgba(248,248,246,0.3)] hover:text-[rgba(248,248,246,0.8)] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+                  className="shrink-0 mr-[8px] w-[24px] h-[24px] flex items-center justify-center rounded-[6px] text-[rgba(248,248,246,0.3)] hover:text-[rgba(248,248,246,0.8)] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
                 >
                   <svg className="w-[12px] h-[12px]" fill="none" viewBox="0 0 12 12">
                     <path d="M2 3.5h8M4.5 3.5V2.5a1 1 0 011-1h1a1 1 0 011 1v1M4 3.5v6.5a1 1 0 001 1h2a1 1 0 001-1V3.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.1" />
@@ -90,7 +90,7 @@ export function HistoryPanel({ conversations, currentConversationId, onSelect, o
       {sorted.length > 0 && (
         <button
           onClick={() => void handleClearAll()}
-          className="w-full text-left px-[12px] py-[9px] text-[11px] text-[rgba(248,248,246,0.45)] hover:text-[rgba(248,248,246,0.75)] hover:bg-white/5 transition-colors border-t border-[rgba(248,248,246,0.08)] shrink-0 focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+          className="w-full text-left px-[12px] py-[9px] text-[11px] text-[rgba(248,248,246,0.45)] hover:text-[rgba(248,248,246,0.75)] hover:bg-white/5 transition-colors border-t border-[rgba(248,248,246,0.08)] shrink-0 focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
         >
           {t('historyClearAllButton')}
         </button>

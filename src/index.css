@@ -6,8 +6,7 @@
 /* El widget vive dentro de un shadow root (ver main.tsx) para no filtrar el
    preflight de Tailwind hacia el sitio anfitrión ni al revés. `:host` (no
    `body`) es lo que aplica estilos heredables al elemento que aloja el shadow
-   root desde adentro — el fondo/alto de página del harness de pruebas
-   standalone vive aparte, en index.html, porque no es parte del widget real. */
+   root desde adentro. */
 :host {
   font-family: 'Inter', sans-serif;
 }

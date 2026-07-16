@@ -21,7 +21,7 @@ export function Header({ onMinimize, onClose, isFullscreen, onToggleFullscreen, 
         {isFullscreen && !historyOpen && (
           <button
             onClick={onToggleHistory}
-            className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent shrink-0"
+            className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent shrink-0 cursor-pointer"
             aria-label={t('headerShowHistory')}
             title={t('headerShowHistory')}
           >
@@ -48,7 +48,7 @@ export function Header({ onMinimize, onClose, isFullscreen, onToggleFullscreen, 
           {!isFullscreen && (
             <button
               onClick={onToggleHistory}
-              className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+              className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
               title={t('headerHistoryToggle')}
               aria-label={t('headerHistoryToggle')}
             >
@@ -61,7 +61,7 @@ export function Header({ onMinimize, onClose, isFullscreen, onToggleFullscreen, 
 
           <button
             onClick={onMinimize}
-            className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+            className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
             title={t('headerMinimize')}
             aria-label={t('headerMinimizeAria')}
           >
@@ -72,7 +72,7 @@ export function Header({ onMinimize, onClose, isFullscreen, onToggleFullscreen, 
 
           <button
             onClick={onToggleFullscreen}
-            className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+            className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
             title={t('headerFullscreen')}
             aria-label={t('headerFullscreen')}
           >
@@ -93,7 +93,7 @@ export function Header({ onMinimize, onClose, isFullscreen, onToggleFullscreen, 
             )}
           </button>
 
-          <button onClick={onClose} className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent" aria-label={t('headerClose')}>
+          <button onClick={onClose} className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer" aria-label={t('headerClose')}>
             <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
               <path d="M4 4L12 12M12 4L4 12" stroke="#F8F8F6" strokeLinecap="round" strokeOpacity="0.45" strokeWidth="1.5" />
             </svg>

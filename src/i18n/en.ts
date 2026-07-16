@@ -6,10 +6,6 @@ import type es from './es';
  * falta una, TypeScript no compila (ver nota en es.ts).
  */
 const en: Record<keyof typeof es, string> = {
-  demoTitle: 'Chat Widget Prototype',
-  demoDescriptionBefore: 'Click the floating button in the bottom-right corner to open the',
-  demoDescriptionAfter: 'support panel.',
-
   chatButtonOpen: 'Open support chat',
 
   errorBoundaryMessage: 'Something went wrong with the support chat.',

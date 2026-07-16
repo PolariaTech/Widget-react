@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <p className="text-[13px] text-[#f8f8f6] mb-[12px]">{t('errorBoundaryMessage')}</p>
           <button
             onClick={this.handleReload}
-            className="bg-[rgba(0,229,204,0.15)] border border-[rgba(0,229,204,0.3)] rounded-[10px] px-[16px] py-[8px] text-[13px] text-[#00e5cc] hover:bg-[rgba(0,229,204,0.28)] transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
+            className="bg-[rgba(0,229,204,0.15)] border border-[rgba(0,229,204,0.3)] rounded-[10px] px-[16px] py-[8px] text-[13px] text-[#00e5cc] hover:bg-[rgba(0,229,204,0.28)] transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
           >
             {t('errorBoundaryReload')}
           </button>

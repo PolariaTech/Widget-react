@@ -29,7 +29,7 @@ export function HistorySidebar({ conversations, currentConversationId, onSelect,
       <div className="flex items-center gap-[8px] px-[16px] py-[12px] border-b border-[rgba(0,229,204,0.08)] shrink-0">
         <button
           onClick={onCollapse}
-          className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent shrink-0"
+          className="flex items-center justify-center rounded-[8px] w-[28px] h-[28px] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent shrink-0 cursor-pointer"
           aria-label={t('historySidebarHide')}
           title={t('historySidebarHide')}
         >

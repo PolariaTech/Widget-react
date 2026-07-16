@@ -48,7 +48,7 @@ Widget de chat de soporte para **Mateo**, el asistente de IA de Polaria en Whats
 npm run dev
 ```
 
-Abre automáticamente en **http://localhost:5173**. Verás una página de fondo oscuro con el texto "Prototipo de Chat Widget" y el botón flotante del chat en la esquina inferior derecha — esa página de fondo es solo el arnés de pruebas standalone (`index.html`/`App.tsx`), no forma parte del widget real que se embebería en producción.
+Abre automáticamente en **http://localhost:5173**. Verás una página en blanco con solo el botón flotante del chat en la esquina inferior derecha — es el widget real tal como se vería embebido en un sitio host, sin ningún contenido de arnés de pruebas alrededor.
 
 ## Cómo correr los tests
 
