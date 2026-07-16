@@ -4,7 +4,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) | Versionad
 
 ## [Unreleased]
 
-Lado cliente de POL-72 (autenticación real por visitante), en paralelo con POL-71 (guard JWT del lado de n8n) — ver `borradores/PLAN_ACCION_WIDGET_POL-70-71-72-73.md`.
+## [0.2.0] — 2026-07-16
+
+Canal web operativo. El widget quedó embebido y **validado end-to-end en Polaria WMS (Bodega de Frío V2)** junto con el equipo host: identificación del usuario autenticado, creación de sesión, respuesta del RAG y manejo de errores de red/token. Cierra POL-72 (widget productivizado + auth real por visitante) y POL-73 (integración y validación), con POL-71 (guard JWT en n8n) ya desplegado — y con ello la épica POL-56 (widget de chat embebible).
 
 ### Added
 
@@ -29,7 +31,7 @@ Lado cliente de POL-72 (autenticación real por visitante), en paralelo con POL-
 
 ### Security
 
-- El widget ya no tiene ningún identificador hardcodeado de visitante; la protección real todavía depende de que n8n valide el JWT (POL-71, en paralelo) y de que Bodega de Frío V2 exponga el endpoint emisor de tokens (POL-73) — ver `docs/SEGURIDAD.md` para el estado detallado mientras esas piezas no estén desplegadas.
+- El widget ya no tiene ningún identificador hardcodeado de visitante; la identidad viaja en el JWT. La cadena de protección quedó completa: n8n valida el JWT (POL-71, desplegado) y Polaria WMS / Bodega de Frío V2 expone el endpoint emisor de tokens (POL-73, integrado y validado) — ver `docs/SEGURIDAD.md`.
 
 ## [0.1.0] — 2026-07-12
 
