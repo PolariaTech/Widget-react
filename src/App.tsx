@@ -3,6 +3,9 @@ import { ChatButton } from './components/ChatButton';
 import { ChatModal } from './components/ChatModal';
 import { useConversations } from './hooks/useConversations';
 import { useChat } from './hooks/useChat';
+import { onAuthError, type TokenAuthError } from './lib/authToken';
+import { showAuthSessionError } from './lib/alerts';
+import { registerChatCloseHandler } from './lib/widgetHostBridge';
 
 const HIDE_ANIMATION_MS = 200;
 
@@ -54,8 +57,15 @@ function App() {
   const minimizeChat = useCallback(() => hideChat(), [hideChat]);
   const closeChat = useCallback(() => hideChat(resetWidget), [hideChat, resetWidget]);
 
-  // Entrar a pantalla completa abre el historial por defecto; salir lo
-  // cierra, para no dejarlo como overlay de golpe al encoger el modal.
+  useEffect(() => registerChatCloseHandler(closeChat), [closeChat]);
+
+  useEffect(() => {
+    return onAuthError((_err: TokenAuthError) => {
+      closeChat();
+      void showAuthSessionError();
+    });
+  }, [closeChat]);
+
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen((f) => {
       const next = !f;

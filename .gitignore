@@ -20,6 +20,7 @@ dist-ssr
 .env.staging
 .env.production
 .env.*.local
+.env.development
 
 # Claude Code — configuración local de permisos, específica de esta máquina
 .claude/settings.local.json

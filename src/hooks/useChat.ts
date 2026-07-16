@@ -3,12 +3,9 @@
  * (portado de sendMessage/finishAiReply en js/chat.js).
  *
  * La condición de carrera del turno de IA se resuelve capturando
- * `capturedConvId` de forma síncrona, antes de cualquier `await` — igual que
- * el original. Como el renderizado (`useConversations().visibleMessages`) se
- * deriva de `currentConversationId` en cada render, la respuesta de Mateo se
- * persiste SIEMPRE en `capturedConvId`, pero solo se ve en pantalla si esa
- * conversación sigue siendo la activa quando la respuesta llega — sin
- * necesidad de un chequeo condicional explícito aquí.
+ * `capturedConvId` de forma síncrona, antes de cualquier `await`. En modo
+ * remoto el id local `conv_*` puede remapease a UUID mientras n8n responde;
+ * `addMessage` / `replaceMessage` resuelven ese alias para no perder la burbuja.
  */
 import { useCallback, useRef, useState } from 'react';
 import type { SelectedImage } from '../types';

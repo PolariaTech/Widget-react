@@ -80,6 +80,17 @@ export async function showStorageQuotaError(): Promise<void> {
   });
 }
 
+/** Sesión / JWT inválido: mensaje i18n `webhookAuthError`. */
+export async function showAuthSessionError(): Promise<void> {
+  const { default: Swal } = await import('sweetalert2');
+  void Swal.fire({
+    ...THEME,
+    icon: 'error',
+    title: t('webhookAuthError'),
+    text: t('webhookAuthError'),
+  });
+}
+
 /** Diálogo de confirmación para acciones destructivas (borrar conversación/historial). Devuelve `true` solo si el usuario confirma. */
 export async function confirmDestructiveAction(title: string, text: string, confirmButtonText: string): Promise<boolean> {
   const { default: Swal } = await import('sweetalert2');

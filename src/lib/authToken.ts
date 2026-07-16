@@ -73,12 +73,16 @@ export function configureTokenFetcher(newFetcher: TokenFetcher): void {
   erroredOut = false;
 }
 
+/** `true` si ya se inyectó un fetcher (p. ej. el host llamó `configureTokenFetcher` antes de `init`). */
+export function isTokenFetcherConfigured(): boolean {
+  return fetcher !== null;
+}
+
 /**
  * Suscribe un listener a fallos de autenticación irrecuperables (fetcher
  * ausente o rechazado). Devuelve una función para desuscribirse.
  *
- * HOOK PARA UI FUTURA: acá es donde, cuando exista una UI de login del
- * widget, se debe enganchar el forzado de cierre de chat / re-login.
+ * En embed, `initMateoWidget` / el host enganchan cierre de chat + mensaje i18n.
  */
 export function onAuthError(listener: (error: TokenAuthError) => void): () => void {
   authErrorListeners.add(listener);

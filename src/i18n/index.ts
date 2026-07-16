@@ -26,8 +26,14 @@ function detectLocale(): Locale {
   return lang.slice(0, 2).toLowerCase() === 'en' ? 'en' : 'es';
 }
 
-const locale: Locale = detectLocale();
-const dict = dictionaries[locale];
+let locale: Locale = detectLocale();
+let dict = dictionaries[locale];
+
+/** Fija el locale (embed `initMateoWidget({ locale })`). Sin selector en UI. */
+export function setLocale(next: Locale): void {
+  locale = next;
+  dict = dictionaries[locale];
+}
 
 /** Devuelve el texto traducido para `key`, interpolando `{{variable}}` con los valores de `vars`. */
 export function t(key: keyof typeof es, vars?: Record<string, string | number>): string {

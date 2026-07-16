@@ -8,15 +8,19 @@ El widget como caja negra: quién lo usa y con qué sistemas externos habla.
 
 ```mermaid
 C4Context
-    Person(visitante, "Visitante web", "Usuario de polaria.tech que necesita soporte")
-    System(widget, "Mateo Support Widget", "Widget de chat en React, embebido en la página")
-    System_Ext(n8n, "Workflow n8n", "Backend conversacional de Mateo (mismo que atiende WhatsApp)")
-    System_Ext(cloudinary, "Cloudinary", "Almacenamiento de imágenes adjuntas")
+    Person(visitante, "Usuario WMS / visitante", "Operador en Polaria WMS o visitante en embed")
+    System(widget, "Mateo Support Widget", "Widget de chat en React, Shadow DOM")
+    System_Ext(wmsApi, "polaria-wms-api", "widget-token + conversaciones")
+    System_Ext(n8n, "Workflow n8n", "Backend conversacional de Mateo")
+    System_Ext(cloudinary, "Cloudinary", "Imágenes adjuntas")
+    System_Ext(supabase, "Supabase", "Tablas widget_*")
 
     Rel(visitante, widget, "Escribe mensajes, adjunta imágenes")
-    Rel(widget, n8n, "Envía mensaje con forma de webhook de WhatsApp Business", "HTTPS/JSON")
-    Rel(widget, cloudinary, "Sube imagen (unsigned upload)", "HTTPS/multipart")
-    Rel(n8n, widget, "Responde con el texto de Mateo", "HTTPS/JSON (misma request)")
+    Rel(widget, wmsApi, "JWT widget + CRUD conversaciones", "HTTPS/JSON")
+    Rel(widget, n8n, "Bearer JWT + body plano message_text/type", "HTTPS/JSON")
+    Rel(widget, cloudinary, "Sube imagen (unsigned)", "HTTPS/multipart")
+    Rel(n8n, widget, "Responde texto de Mateo", "HTTPS/JSON")
+    Rel(wmsApi, supabase, "Persiste widget_conversacion/mensaje", "Postgres")
 ```
 
 ## Diagrama de contenedores (C4 Nivel 2)
@@ -34,9 +38,10 @@ flowchart TB
     end
 
     SwalTarget["swalTheme.css<br/>(document.head, FUERA del shadow root)"]
-    LS[("localStorage<br/>(historial versionado)")]
+    LS[("localStorage<br/>(mirror / fallback)")]
     N8N["Webhook n8n"]
     CDN["Cloudinary"]
+    WMS["polaria-wms-api"]
 
     App --> ChatModal --> Hooks --> Lib
     Hooks -.-> I18n

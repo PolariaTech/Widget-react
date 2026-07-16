@@ -1,37 +1,27 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import widgetStyles from './index.css?inline'
-import './swalTheme.css'
-import App from './App.tsx'
-import { ErrorBoundary } from './components/ErrorBoundary.tsx'
-
 /**
- * El widget se monta dentro de un shadow root (no directamente en `#root`)
- * para no filtrar el preflight de Tailwind hacia el sitio anfitrión ni al
- * revés, requisito para poder embeberse en polaria.tech. El CSS del widget
- * se importa con `?inline` (string procesado por Tailwind, no un <link> que
- * Vite inyectaría en el <head> del documento) para poder colocarlo como
- * <style> dentro del propio shadow root.
- *
- * swalTheme.css se importa aparte, de forma normal (SIN `?inline`): SweetAlert2
- * monta sus popups siempre en `document.body`, nunca dentro de un shadow root
- * (ver la nota en ese archivo), así que su tema tiene que vivir en el <head>
- * del documento como cualquier CSS de Vite de costumbre.
+ * Entrada standalone (dev / preview). Delega en `initMateoWidget` sin token
+ * real — en demo local el fetcher se configura solo si hay uno en window.
+ * Para pruebas de chat hace falta un fetcher mock o el embed desde Polaria.
  */
-const host = document.getElementById('root')!
-const shadowRoot = host.attachShadow({ mode: 'open' })
+import {
+  configureTokenFetcher,
+  isTokenFetcherConfigured,
+} from './lib/authToken';
+import { initMateoWidget } from './embed.tsx';
 
-const styleEl = document.createElement('style')
-styleEl.textContent = widgetStyles
-shadowRoot.appendChild(styleEl)
+const host = document.getElementById('root');
+if (!host) {
+  throw new Error('No se encontró #root');
+}
 
-const reactMount = document.createElement('div')
-shadowRoot.appendChild(reactMount)
+// Demo local: fetcher stub para no romper al abrir (n8n fallará auth hasta
+// configurar uno real). En embed Polaria el host inyecta el fetcher real.
+if (!isTokenFetcherConfigured()) {
+  configureTokenFetcher(async () => {
+    throw new Error(
+      'Demo standalone: configura un tokenFetcher real (ver docs/EMBED-POLARIA.md).',
+    );
+  });
+}
 
-createRoot(reactMount).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </StrictMode>,
-)
+initMateoWidget({ container: host, locale: 'es' });

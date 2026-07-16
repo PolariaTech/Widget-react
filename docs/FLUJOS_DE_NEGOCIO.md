@@ -6,20 +6,20 @@
 
 **Objetivo:** el visitante escribe una pregunta → Mateo responde dentro de la misma conversación.
 
-**Actores:** Visitante, Mateo (vía webhook de n8n).
+**Actores:** Visitante, Mateo (vía webhook de n8n). En embed Polaria también interviene el API WMS (historial remoto).
 
-**Precondiciones:** el widget está abierto (modo compacto o fullscreen), el visitante no tiene otro envío en curso (`isSending === false`).
+**Precondiciones:** el widget está abierto (modo compacto o fullscreen), el visitante no tiene otro envío en curso (`isSending === false`). En embed: sesión WMS activa y `configureTokenFetcher` configurado (JWT para n8n).
 
 | # | Actor | Acción | Estado del sistema |
 |---|---|---|---|
 | 1 | Visitante | Escribe texto en el input y presiona Enter (o clic en enviar) | Si `isSending` es `true`, no pasa nada (protegido con ref síncrono, ver ADR-0005) |
-| 2 | Sistema | Crea una conversación nueva si no había una activa | `ensureConversation()` — de forma síncrona, sin condición de carrera aunque se dispare 2 veces seguidas |
+| 2 | Sistema | Crea una conversación nueva si no había una activa | `ensureConversation()` — de forma síncrona; en remoto crea UUID en paralelo |
 | 3 | Sistema | Agrega el mensaje del usuario al historial, deshabilita el input | `isSending = true`; aparece el indicador "Mateo está escribiendo…" |
-| 4 | Sistema | Envía el mensaje al webhook de n8n (ver `docs/INTEGRACIONES.md`) | Espera hasta 120s |
+| 4 | Sistema | Envía el mensaje al webhook de n8n con Bearer JWT (ver `docs/INTEGRACIONES.md`) | Espera hasta 120s |
 | 5 | Mateo (n8n) | Procesa y responde con el texto | — |
-| 6 | Sistema | Agrega la respuesta al historial, rehabilita el input | `isSending = false`; se persiste todo en `localStorage` |
+| 6 | Sistema | Agrega la respuesta al historial (resolviendo alias `conv_*`→UUID), rehabilita el input | `isSending = false`; sync remoto a `/mateo/conversaciones` si hay embed |
 
-**Postcondiciones:** la conversación tiene 2 mensajes nuevos (usuario + Mateo), el título de la conversación quedó fijado al contenido del primer mensaje si no lo tenía ya.
+**Postcondiciones:** la conversación tiene 2 mensajes nuevos (usuario + Mateo), el título de la conversación quedó fijado al contenido del primer mensaje si no lo tenía ya. En embed, ambos mensajes comparten el mismo `id_conversacion` UUID en Supabase.
 
 **Casos de error:**
 

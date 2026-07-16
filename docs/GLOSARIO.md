@@ -5,7 +5,7 @@
 ## Entidades del dominio
 
 **Conversación**
-Un hilo completo de mensajes entre el visitante y Mateo, con un título (derivado del primer mensaje o su caption), fecha de creación/actualización, y su lista de mensajes. Representación en el sistema: objeto `Conversation` en `src/types.ts`, persistido dentro del array `conversations` en `localStorage`.
+Un hilo completo de mensajes entre el visitante y Mateo. En standalone se refleja en `Conversation` (`src/types.ts`) y puede espejarse en `localStorage`. En **embed Polaria**, la fuente de verdad es `widget_conversacion` / `widget_mensaje` (UUID); el id temporal `conv_*` solo existe hasta el create remoto.
 Estados: no tiene estados propios — existe desde que se crea (`ensureConversation`) hasta que se elimina explícitamente o se borra todo el historial.
 No confundir con: **Historial**, que es la *lista* de todas las conversaciones, no una conversación individual.
 

@@ -8,11 +8,15 @@ Lado cliente de POL-72 (autenticación real por visitante), en paralelo con POL-
 
 ### Added
 
+- Build embebible (`npm run build:lib`): IIFE `dist/assets/mateo-widget.js` + ES; API `initMateoWidget` / `window.MateoWidget` (`src/embed.tsx`).
+- Sync remoto de conversaciones (`RemoteConversationRepository`) con fallback `LocalStorageRepository`; docs `EMBED-POLARIA.md` + `vercel.json`.
 - Se agregó un token manager en memoria (`src/lib/authToken.ts`) para el JWT de sesión del visitante: nunca se persiste en `localStorage`, se refresca proactivamente ~30s antes de expirar y reactivamente ante un 401 del webhook de n8n. Si el refresh falla porque la sesión subyacente ya no es válida, el manager deja de servir el último token conocido y expone el fallo (excepción/`onAuthError`) en vez de reintentar indefinidamente — queda como punto de enganche para una futura UI de re-login.
 - Se agregó el header `Authorization: Bearer <jwt>` a cada llamada al webhook de n8n.
 
 ### Changed
 
+- `onAuthError` cierra el modal del chat y muestra i18n `webhookAuthError`; POL-72 **done**, POL-73 host-side, POL-71 n8n-side (`docs/SEGURIDAD.md`).
+- `docs/INTEGRACIONES.md` documenta el payload plano + Bearer (sin envelope WhatsApp obsoleto).
 - El payload saliente hacia n8n dejó de imitar la envoltura del webhook de WhatsApp Business (`entry[].changes[].value.messages[]`) y ahora es un body plano `{ message_text, message_type }`.
 - Se eliminó `USER_PHONE`, el identificador de remitente fijo y compartido por todos los visitantes del widget — la identidad ahora viaja en el JWT, no en el body del mensaje.
 - Cuando el usuario adjunta una imagen junto con texto, ahora se envían dos mensajes secuenciales a n8n (imagen, luego texto) en vez de uno combinado, porque el nuevo body plano no tiene un campo de caption aparte; cada uno genera su propia respuesta de Mateo.

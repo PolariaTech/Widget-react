@@ -1,174 +1,134 @@
 # Integraciones externas — Mateo Support Widget
 
-> Audiencia: cualquier persona (interna o externa) que necesite entender o probar cómo el widget habla con el webhook de n8n o con Cloudinary, sin necesidad de leer el código fuente. Este widget no expone ninguna API propia — solo consume las dos de abajo — así que este documento reemplaza a una spec OpenAPI tradicional.
+> Audiencia: cualquiera que necesite entender o probar cómo el widget habla con n8n o Cloudinary. Este widget no expone OpenAPI propia — consume las APIs de abajo.
 
 ## 1. Webhook de n8n (Mateo)
 
 ### Qué es
 
-El widget le envía cada mensaje del usuario al mismo workflow de n8n que atiende Mateo en WhatsApp Business, imitando la forma real del webhook de la **WhatsApp Business Cloud API**. El campo `messaging_product: "web"` es lo que le permite al workflow distinguir estos mensajes de los de WhatsApp real. **No cambiar esta forma de payload sin verificar primero con el workflow de n8n** (`src/lib/webhook.ts`).
+El widget envía cada mensaje del usuario al workflow de n8n del canal web con un **body plano** (ya no imita el envelope de WhatsApp Business). La autenticación va en `Authorization: Bearer <jwt>` (POL-72). n8n debe validar ese JWT (POL-71) antes de procesar.
 
 | Campo | Valor |
 |---|---|
-| Endpoint | `VITE_N8N_WEBHOOK_URL` (ver `docs/VARIABLES_DE_ENTORNO.md`) — hoy en dev: `https://polariatech.app.n8n.cloud/webhook/test-mateo-support` |
+| Endpoint | `VITE_N8N_WEBHOOK_URL` (ver `docs/VARIABLES_DE_ENTORNO.md`) |
 | Método | `POST` |
-| Autenticación | **Ninguna hoy** — ver `docs/SEGURIDAD.md`, es un riesgo conocido pendiente de coordinar con el equipo de n8n |
+| Autenticación | `Authorization: Bearer <jwt>` — JWT emitido por `POST /auth/mateo/widget-token` (POL-73). n8n valida secreto + `iss`/`aud`/`kid` (POL-71). |
 | Content-Type | `application/json` |
-| Timeout del cliente | 120000 ms (`FETCH_TIMEOUT_MS` en `config.ts`) — si no responde en ese tiempo, el request se aborta |
+| Timeout del cliente | 120000 ms (`FETCH_TIMEOUT_MS` en `config.ts`) |
 
 ### Request — mensaje de texto
 
 ```json
 {
-  "entry": [
-    {
-      "changes": [
-        {
-          "value": {
-            "messaging_product": "web",
-            "metadata": { "phone_number_id": "1104260132766227" },
-            "messages": [
-              {
-                "from": "573006188395",
-                "id": "wamid.md3k9x2ap8xzf1q",
-                "type": "text",
-                "text": { "body": "¿Cómo descongelo la cámara 2?" }
-              }
-            ]
-          }
-        }
-      ]
-    }
-  ]
+  "message_text": "¿Cómo descongelo la cámara 2?",
+  "message_type": "text"
 }
 ```
 
-- `from`: `USER_PHONE` — número fijo compartido por **todos** los visitantes web (no es un canal de WhatsApp real, ver `docs/SEGURIDAD.md` sobre el riesgo de identidad cruzada).
-- `id`: un `wamid.*` generado localmente con `Date.now().toString(36) + Math.random().toString(36)` — no usa `crypto.randomUUID()` (ver ADR-0004). Es un identificador de correlación, no un secreto.
-
-### Request — mensaje de imagen (con o sin caption)
+### Request — mensaje de imagen
 
 ```json
 {
-  "entry": [{ "changes": [{ "value": {
-    "messaging_product": "web",
-    "metadata": { "phone_number_id": "1104260132766227" },
-    "messages": [
-      {
-        "from": "573006188395",
-        "id": "wamid.md3k9y7bq2xzf1q",
-        "type": "image",
-        "image": {
-          "url": "https://res.cloudinary.com/ujssaxx6/image/upload/v1234567890/abc123.jpg",
-          "caption": "Así se ve la fuga"
-        }
-      }
-    ]
-  } }] }]
+  "message_text": "https://res.cloudinary.com/.../abc123.jpg",
+  "message_type": "image"
 }
 ```
 
-`image.url` es siempre la `secure_url` que devolvió Cloudinary (nunca el Data URL local) — ver la sección 2 de este documento sobre cómo llega a existir esa URL antes de este request.
+`message_text` en imágenes es la `secure_url` de Cloudinary (nunca el Data URL local). Caption e imagen se envían como dos POSTs secuenciales si el usuario escribió texto junto a la imagen.
 
 ### Respuesta esperada — 200 OK
 
-El widget acepta **dos formas** de respuesta 200 con `Content-Type` JSON:
+El widget acepta JSON:
 
 ```json
-{ "output": "Para descongelar la cámara 2, primero baja la temperatura de setpoint a -5°C..." }
+{ "output": "Para descongelar la cámara 2..." }
 ```
 
-También acepta `{ "reply": "..." }` o `{ "text": "..." }` en vez de `output` (se prueban en ese orden). Si el body no es JSON válido, se muestra el texto plano tal cual (útil si n8n responde solo texto).
+También `{ "reply": "..." }` o `{ "text": "..." }` (en ese orden). Si el body no es JSON, usa el texto plano.
 
-### Respuestas de error — cómo las interpreta el widget
+### Errores
 
 | Situación | Qué ve el usuario | `isError` |
 |---|---|---|
-| Respuesta HTTP no-2xx (`res.ok === false`) | "Error al conectar con el servidor." | `true` |
-| Timeout (120s sin respuesta) o fallo de red (`fetch` lanza excepción) | "Error al conectar con el servidor." | `true` |
-| Respuesta 200 pero JSON sin `output`/`reply`/`text` como string (ej. array, objeto vacío) | "Recibí una respuesta con un formato inesperado." | `true` |
-| Respuesta 200 con `output`/`reply`/`text` string | El texto de Mateo, normal | `false` |
-
-Los mensajes con `isError: true` se renderizan con un estilo visualmente distinto (fondo rojo tenue + ícono de advertencia) — nunca se disfrazan de una respuesta real de Mateo. Ver `docs/FLUJOS_DE_NEGOCIO.md`.
+| No hay token / fetcher falló / 401 tras refresh | `webhookAuthError` (cierra chat vía `onAuthError`) | `true` |
+| HTTP no-2xx (distinto de auth) | `webhookConnectionError` | `true` |
+| Timeout / red | `webhookConnectionError` | `true` |
+| 200 sin `output`/`reply`/`text` string | `webhookUnexpectedReply` | `true` |
 
 ### Probarlo manualmente
 
 ```bash
-curl -X POST "https://polariatech.app.n8n.cloud/webhook/test-mateo-support" \
+curl -X POST "$VITE_N8N_WEBHOOK_URL" \
   -H "Content-Type: application/json" \
-  -d '{
-    "entry": [{ "changes": [{ "value": {
-      "messaging_product": "web",
-      "metadata": { "phone_number_id": "1104260132766227" },
-      "messages": [{ "from": "573006188395", "id": "wamid.test123", "type": "text", "text": { "body": "prueba manual" } }]
-    } }] }]
-  }'
+  -H "Authorization: Bearer <widget_jwt>" \
+  -d '{"message_text":"prueba manual","message_type":"text"}'
 ```
-
-Resultado esperado: `200 OK` con un JSON `{ "output": "..." }` (o equivalente) en menos de ~10 segundos en el caso normal.
 
 ## 2. Cloudinary (subida de imágenes)
 
 ### Qué es
 
-Cuando el usuario adjunta una imagen, el widget la sube directo desde el navegador a Cloudinary usando un **unsigned upload** (sin pasar por ningún backend propio), y usa la `secure_url` que devuelve para construir el mensaje de imagen de la sección 1.
+Unsigned upload desde el navegador; la `secure_url` alimenta el `message_type: "image"` de la sección 1.
 
 | Campo | Valor |
 |---|---|
 | Endpoint | `https://api.cloudinary.com/v1_1/{VITE_CLOUDINARY_CLOUD_NAME}/image/upload` |
 | Método | `POST`, `multipart/form-data` |
-| Autenticación | Ninguna — preset *unsigned* (`VITE_CLOUDINARY_UPLOAD_PRESET`), confía en la validación del lado del cliente + lo que esté configurado en el preset (ver `docs/SEGURIDAD.md`) |
-| Timeout del cliente | 120000 ms, mismo `fetchWithTimeout` que el webhook (`src/lib/http.ts`) |
+| Autenticación | Preset *unsigned* (`VITE_CLOUDINARY_UPLOAD_PRESET`) |
+| Timeout | 120000 ms |
 
-### Validaciones del lado del cliente antes de subir (`src/lib/cloudinary.ts` → `validateImage`)
+### Validaciones cliente (`validateImage`)
 
-| Validación | Límite | Dónde se aplica primero |
-|---|---|---|
-| Tipo MIME permitido | `image/jpeg`, `image/png`, `image/webp` | Al seleccionar el archivo (`InputFooter.tsx`), antes de leerlo |
-| Tamaño máximo | 5 MB (`IMAGE_VALIDATION.MAX_FILE_SIZE`) | Al seleccionar el archivo, antes de leerlo — evita cargar un Data URL enorme en memoria innecesariamente |
-| Firma de contenido (magic bytes) | Debe coincidir con JPEG/PNG/WebP real, no solo la extensión | Después de leer los primeros bytes (`fileSignature.ts`) — detecta un PDF renombrado a `.jpg` |
+| Validación | Límite |
+|---|---|
+| MIME | `image/jpeg`, `image/png`, `image/webp` |
+| Tamaño | 5 MB |
+| Magic bytes | Debe coincidir con el tipo real |
 
-**Estas validaciones son de UX, no de seguridad real** — un preset unsigned se puede saltar fácilmente desde DevTools o `curl`. La restricción real de formato/tamaño debe vivir en la consola de Cloudinary, sobre el propio upload preset (pendiente de confirmar — ver `docs/SEGURIDAD.md`).
+Son de UX, no de seguridad real — el preset en consola Cloudinary debe restringir formato/tamaño (ver `docs/SEGURIDAD.md`).
 
 ### Request
 
 ```
-POST https://api.cloudinary.com/v1_1/ujssaxx6/image/upload
+POST https://api.cloudinary.com/v1_1/{cloud}/image/upload
 Content-Type: multipart/form-data
 
-file=data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...
-upload_preset=mateo_test_unsigned
+file=data:image/jpeg;base64,...
+upload_preset={preset}
 ```
 
-### Respuesta esperada — 200 OK
+### Respuesta
+
+Usa solo `secure_url` validada con `new URL(...)`.
+
+## 3. API conversaciones (Polaria WMS)
+
+En embed Polaria: `conversationApiBase` → CRUD `/mateo/conversaciones` (tablas `widget_*`).
+
+| Campo | Valor |
+|-------|--------|
+| Base | p. ej. `/api/mateo/conversaciones` (proxy Next → Nest) |
+| Auth | Bearer **sesión WMS** (`conversationTokenFetcher`) — **no** el JWT de n8n |
+| Create | `POST /` body `{ titulo? }` → detalle con `idConversacion` UUID |
+| Append | `POST /:id/mensajes` — `:id` **debe ser UUID** |
+| List / detail / delete | `GET /`, `GET /:id`, `DELETE /:id` |
+
+Body append:
 
 ```json
 {
-  "secure_url": "https://res.cloudinary.com/ujssaxx6/image/upload/v1234567890/abc123.jpg",
-  "public_id": "abc123",
-  "format": "jpg",
-  "bytes": 482913
+  "rol": "user",
+  "tipo": "text",
+  "contenido": "Hola",
+  "esError": false,
+  "createdAt": "2026-07-16T17:45:00.000Z"
 }
 ```
 
-El widget solo usa `secure_url`, y la valida como una URL bien formada (`new URL(...)`, no solo que exista) antes de usarla — si Cloudinary devolviera un `secure_url` corrupto, el widget lo trata como error en vez de intentar renderizar una imagen rota.
+### Race id local → UUID
 
-### Respuestas de error
+El widget crea primero un id `conv_*` y luego remapea al UUID del servidor.  
+`addMessage` resuelve el alias; sin eso, la respuesta de Mateo no se pinta y el sync puede crear **otra** conversación. Ver `docs/EMBED-POLARIA.md`.
 
-| Situación | Mensaje mostrado al usuario |
-|---|---|
-| Cloudinary responde no-2xx | "Cloudinary respondió con error {status}: {cuerpo, primeros 200 caracteres}", envuelto en "No se pudo subir la imagen a Cloudinary: ..." |
-| Respuesta 200 sin `secure_url` (o no es una URL válida) | "Respuesta de Cloudinary no contiene secure_url" |
-| Timeout / fallo de red | "La solicitud tardó demasiado y fue cancelada. Intenta de nuevo." |
+Docs: `docs/EMBED-POLARIA.md`, polaria-wms-api `docs/MATEO-INTEGRATION.md`, polaria-wms-db `docs/WIDGET-MATEO-CONVERSACIONES.md`.
 
-Cuando la subida falla, el widget **reemplaza** el Data URL local del mensaje de imagen (que se mostraba de inmediato, de forma optimista) por un placeholder de texto corto ("No se pudo enviar la imagen.") — nunca deja el base64 completo (hasta ~6.7MB para una imagen de 5MB) persistido en `localStorage`. Ver ADR relacionado y `docs/FLUJOS_DE_NEGOCIO.md`.
-
-### Probarlo manualmente
-
-```bash
-curl -X POST "https://api.cloudinary.com/v1_1/ujssaxx6/image/upload" \
-  -F "file=@/ruta/a/una/imagen.jpg" \
-  -F "upload_preset=mateo_test_unsigned"
-```
-
-Resultado esperado: `200 OK` con JSON que incluye `secure_url`.

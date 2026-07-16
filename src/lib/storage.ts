@@ -1,28 +1,38 @@
 /**
- * storage.ts — Persistencia de conversaciones en localStorage (portado de js/storage.js).
+ * storage.ts — Persistencia de conversaciones.
  *
- * NOTA: localStorage es una solución temporal pensada solo para este prototipo.
- * Es local al navegador (no sincroniza entre dispositivos), tiene un límite de
- * tamaño (~5-10MB) y cualquiera con acceso al navegador puede leerlo. Antes de
- * pasar a producción, este historial debería guardarse en una base de datos o
- * backend real (asociado al usuario/número de teléfono), no en el cliente.
+ * Producción (embed Polaria): `RemoteConversationRepository` vía API WMS
+ * (`widget_conversacion` / `widget_mensaje`). localStorage queda como fallback
+ * de desarrollo/offline — no es fuente de verdad en prod (docs/SEGURIDAD.md).
  */
 import type { Conversation, Message, MessageRole, MessageType } from '../types';
 import { t } from '../i18n';
+import { getEmbedRuntimeConfig } from './embedConfig';
+import { RemoteConversationRepository } from './conversationApi';
 
 export const CONVERSATIONS_STORAGE_KEY = 'mateo_chat_conversations';
 
 /**
  * Versión del esquema de lo persistido en `CONVERSATIONS_STORAGE_KEY`. Subir
  * este número junto con un cambio a `Message`/`Conversation` (types.ts) que
- * no sea compatible con datos ya guardados, para poder distinguir "esto es
- * de una versión más nueva del widget, no lo toques" de "esto está corrupto".
+ * no sea compatible con datos ya guardados.
  */
 const CURRENT_SCHEMA_VERSION = 1;
 
 interface StoredData {
   schemaVersion: number;
   conversations: Conversation[];
+}
+
+/** Contrato de persistencia (local o remoto). */
+export interface ConversationRepository {
+  list(): Promise<Conversation[]>;
+  create(titulo?: string | null): Promise<Conversation>;
+  getDetail(id: string): Promise<Conversation>;
+  appendMessage(id: string, message: Message): Promise<void>;
+  delete(id: string): Promise<void>;
+  /** Persistencia completa (solo local / cache). Remoto no-op o mirror. */
+  saveAll?(conversations: Conversation[]): Promise<boolean>;
 }
 
 function isMessage(value: unknown): value is Message {
@@ -63,22 +73,21 @@ export function loadConversations(): Conversation[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
 
-    // Compatibilidad con lo guardado antes de la versión de esquema (Fase 0-2
-    // de auditoria-widget-react.md): el array de conversaciones sin envelope.
     const rawList = Array.isArray(parsed) ? parsed : isStoredData(parsed) ? parsed.conversations : null;
 
     if (isStoredData(parsed) && parsed.schemaVersion > CURRENT_SCHEMA_VERSION) {
-      // Versión de esquema más nueva de la que este código sabe leer (ej. el
-      // usuario volvió a una build vieja del widget) — descartar en vez de
-      // arriesgarse a interpretar mal una forma de datos que no conoce.
-      console.warn(`Se descartó el historial: versión de esquema ${parsed.schemaVersion} no soportada (actual: ${CURRENT_SCHEMA_VERSION}).`);
+      console.warn(
+        `Se descartó el historial: versión de esquema ${parsed.schemaVersion} no soportada (actual: ${CURRENT_SCHEMA_VERSION}).`,
+      );
       return [];
     }
 
     if (rawList === null) return [];
     const valid = rawList.filter(isConversation);
     if (valid.length !== rawList.length) {
-      console.warn(`Se descartaron ${rawList.length - valid.length} conversación(es) corrupta(s) del historial.`);
+      console.warn(
+        `Se descartaron ${rawList.length - valid.length} conversación(es) corrupta(s) del historial.`,
+      );
     }
     return valid;
   } catch {
@@ -86,7 +95,7 @@ export function loadConversations(): Conversation[] {
   }
 }
 
-/** Persiste el arreglo de conversaciones completo en localStorage. Devuelve `false` si falla (típicamente por cuota excedida), para que el caller pueda decidir si avisa al usuario. */
+/** Persiste el arreglo de conversaciones completo en localStorage. */
 export function saveConversations(conversations: Conversation[]): boolean {
   try {
     const data: StoredData = { schemaVersion: CURRENT_SCHEMA_VERSION, conversations };
@@ -96,6 +105,63 @@ export function saveConversations(conversations: Conversation[]): boolean {
     console.warn('No se pudo guardar el historial de conversaciones:', err);
     return false;
   }
+}
+
+/** Fallback dev/offline: localStorage. */
+export class LocalStorageRepository implements ConversationRepository {
+  async list(): Promise<Conversation[]> {
+    return loadConversations();
+  }
+
+  async create(titulo?: string | null): Promise<Conversation> {
+    const conv = createConversation();
+    if (titulo) conv.title = titulo.slice(0, 40);
+    const all = [conv, ...loadConversations()];
+    saveConversations(all);
+    return conv;
+  }
+
+  async getDetail(id: string): Promise<Conversation> {
+    const found = loadConversations().find((c) => c.id === id);
+    if (!found) throw new Error(`Conversación no encontrada: ${id}`);
+    return found;
+  }
+
+  async appendMessage(id: string, message: Message): Promise<void> {
+    const all = loadConversations();
+    const next = addMessage(
+      all,
+      id,
+      message.role,
+      message.type,
+      message.content,
+      message.timestamp,
+      undefined,
+      message.isError,
+    );
+    saveConversations(next);
+  }
+
+  async delete(id: string): Promise<void> {
+    saveConversations(deleteConversation(loadConversations(), id));
+  }
+
+  async saveAll(conversations: Conversation[]): Promise<boolean> {
+    return saveConversations(conversations);
+  }
+}
+
+const localRepo = new LocalStorageRepository();
+
+/** Resuelve el repositorio activo según `conversationApiBase` del embed. */
+export function getConversationRepository(): ConversationRepository {
+  const base = getEmbedRuntimeConfig().conversationApiBase;
+  if (base) return new RemoteConversationRepository(base);
+  return localRepo;
+}
+
+export function isRemoteConversationMode(): boolean {
+  return Boolean(getEmbedRuntimeConfig().conversationApiBase);
 }
 
 /** Crea una nueva conversación vacía. */
@@ -109,17 +175,6 @@ export function createConversation(): Conversation {
   };
 }
 
-/**
- * Agrega un mensaje a la conversación indicada, devolviendo un nuevo arreglo
- * de conversaciones (inmutable). Define el título de la conversación (a partir
- * del primer mensaje) si aún no tiene uno. Si `convId` no existe en `conversations`,
- * la devuelve sin cambios.
- *
- * @param titleOverride Título a usar si esta conversación todavía no tiene uno,
- *   en vez del default por `type` — para cuando el primer mensaje es una imagen
- *   CON caption (ver useChat.ts): sin esto, el título quedaría en "Imagen" aunque
- *   haya un caption de texto más descriptivo disponible en el mismo envío.
- */
 export function addMessage(
   conversations: Conversation[],
   convId: string,
@@ -149,15 +204,6 @@ export function addMessage(
   return next;
 }
 
-/**
- * Reemplaza el contenido del mensaje más reciente que coincida con
- * `convId`/`type`/`timestamp`, devolviendo un nuevo arreglo de conversaciones.
- *
- * Se usa para el mensaje de imagen del usuario: se persiste primero con la
- * Data URL local (para que se vea de inmediato mientras se sube a Cloudinary)
- * y se reemplaza por la `secure_url` una vez la subida termina, para no dejar
- * imágenes en base64 permanentemente en localStorage.
- */
 export function replaceMessageContent(
   conversations: Conversation[],
   convId: string,
@@ -185,7 +231,9 @@ export function replaceMessageContent(
   return next;
 }
 
-/** Elimina una conversación del historial, devolviendo un nuevo arreglo (inmutable). */
-export function deleteConversation(conversations: Conversation[], convId: string): Conversation[] {
+export function deleteConversation(
+  conversations: Conversation[],
+  convId: string,
+): Conversation[] {
   return conversations.filter((c) => c.id !== convId);
 }

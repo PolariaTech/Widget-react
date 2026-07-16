@@ -1,10 +1,10 @@
 # Mateo Support — Widget de Chat (React)
 
-Widget de chat de soporte para **Mateo**, el asistente de IA de Polaria en WhatsApp — esta es la migración a React del prototipo, pensada para poder incrustarse en `polaria.tech` como un componente aislado (Shadow DOM) que no interfiere con el CSS del sitio anfitrión. El widget conversa con Mateo a través del mismo workflow de n8n que atiende WhatsApp, permite adjuntar imágenes (subidas a Cloudinary) y guarda el historial de conversaciones en el navegador del visitante.
+Widget de chat de soporte para **Mateo**, el asistente de IA de Polaria. Embebible en **polaria-wms-web** (Shadow DOM) o usable standalone. Habla con n8n (mismo workflow del canal web), sube imágenes a Cloudinary y, en embed, persiste el historial en Supabase vía el API WMS (`widget_*`).
 
-[![Build](https://img.shields.io/badge/build-manual-lightgrey)]() [![Tests](https://img.shields.io/badge/tests-56%2F56-brightgreen)]() [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)]() [![i18n](https://img.shields.io/badge/i18n-es%20%7C%20en-blueviolet)]()
+[![Build](https://img.shields.io/badge/build-manual-lightgrey)]() [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)]() [![i18n](https://img.shields.io/badge/i18n-es%20%7C%20en-blueviolet)]()
 
-> Estado del proyecto: prototipo funcional, con varias fases de hardening ya aplicadas. Pendiente antes de producción real: empaquetado como script distribuible, que n8n haga cumplir el JWT del lado del servidor (POL-71) y confirmación de límites del preset de Cloudinary en consola — ver `docs/SEGURIDAD.md`.
+> **Embed Polaria:** `npm run build:lib` → `dist/assets/mateo-widget.js`. Guía: [`docs/EMBED-POLARIA.md`](docs/EMBED-POLARIA.md). Seguridad / POL-71–73: [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md).
 
 ## Stack tecnológico
 
@@ -61,9 +61,23 @@ Corre la suite de Vitest una vez (56 tests en 6 archivos, todos sobre módulos p
 Otros comandos útiles:
 
 ```bash
-npm run build    # tsc -b && vite build — build de producción en dist/
-npm run lint     # oxlint sobre todo el proyecto
-npm run preview  # sirve el build de dist/ localmente
+npm run build      # app standalone → dist/
+npm run build:lib  # IIFE/ES embebible → dist/assets/mateo-widget*.js
+npm run lint
+npm run preview
+```
+
+Embed en Polaria: ver **`docs/EMBED-POLARIA.md`**. Ejemplo mínimo:
+
+```js
+MateoWidget.init({
+  container: document.getElementById('mateo-root'),
+  tokenFetcher: () =>
+    fetch('/api/auth/mateo/widget-token', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + wmsToken },
+    }).then((r) => r.json()),
+});
 ```
 
 ## Variables de entorno
