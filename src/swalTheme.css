@@ -1,0 +1,75 @@
+/**
+ * swalTheme.css — Tema de SweetAlert2 (lib/alerts.ts) con la misma estética
+ * del widget: fondo casi negro con degradado, borde/acento teal, tipografía
+ * Inter. `buttonsStyling: false` en alerts.ts es lo que deja que estas reglas
+ * controlen el botón en vez de los estilos inline por defecto de SweetAlert2.
+ *
+ * Vive FUERA del bundle CSS del widget (index.css, inyectado dentro del
+ * shadow root — ver main.tsx) a propósito: SweetAlert2 siempre monta sus
+ * popups en `document.body` sin importar el `target` que se le pase (su
+ * propio `getContainer()` interno usa `document.body.querySelector(...)`),
+ * así que no puede vivir dentro de un shadow root. Este archivo se importa
+ * en main.tsx sin `?inline`, para que Vite lo inyecte como de costumbre en el
+ * `<head>` del documento normal — la única porción de CSS del widget que
+ * intencionalmente no está aislada, acotada a estas clases con prefijo
+ * `mateo-swal-` para minimizar el riesgo de colisión con el sitio anfitrión.
+ */
+.mateo-swal-popup {
+  border: 1px solid rgba(0, 229, 204, 0.18);
+  border-radius: 22px !important;
+  box-shadow: 0px 8px 48px 0px rgba(0, 0, 0, 0.6);
+  font-family: 'Inter', sans-serif;
+}
+
+.mateo-swal-title {
+  color: #f8f8f6 !important;
+  font-size: 16px !important;
+  font-weight: 600;
+}
+
+.mateo-swal-text {
+  color: rgba(248, 248, 246, 0.85) !important;
+  font-size: 13px !important;
+  line-height: 19px;
+}
+
+.mateo-swal-confirm {
+  background: rgba(0, 229, 204, 0.15);
+  border: 1px solid rgba(0, 229, 204, 0.3);
+  border-radius: 10px;
+  color: #00e5cc;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 22px;
+  transition: background-color 0.15s ease;
+}
+
+.mateo-swal-confirm:hover {
+  background: rgba(0, 229, 204, 0.28);
+}
+
+.mateo-swal-confirm:focus {
+  box-shadow: 0 0 0 2px rgba(0, 229, 204, 0.5);
+  outline: none;
+}
+
+.mateo-swal-cancel {
+  background: transparent;
+  border: 1px solid rgba(248, 248, 246, 0.15);
+  border-radius: 10px;
+  color: rgba(248, 248, 246, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 22px;
+  margin-inline-end: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.mateo-swal-cancel:hover {
+  background: rgba(248, 248, 246, 0.08);
+}
+
+.mateo-swal-cancel:focus {
+  box-shadow: 0 0 0 2px rgba(248, 248, 246, 0.3);
+  outline: none;
+}

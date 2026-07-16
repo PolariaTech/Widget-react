@@ -1,0 +1,86 @@
+@import 'tailwindcss';
+
+/* Estilos propios del widget de chat (fuera de las utilidades de Tailwind),
+   portados 1:1 de Widget/css/styles.css. */
+
+/* El widget vive dentro de un shadow root (ver main.tsx) para no filtrar el
+   preflight de Tailwind hacia el sitio anfitrión ni al revés. `:host` (no
+   `body`) es lo que aplica estilos heredables al elemento que aloja el shadow
+   root desde adentro — el fondo/alto de página del harness de pruebas
+   standalone vive aparte, en index.html, porque no es parte del widget real. */
+:host {
+  font-family: 'Inter', sans-serif;
+}
+
+#messages-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+#messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#messages-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 204, 0.2);
+  border-radius: 9999px;
+}
+
+/* Tipografía de las burbujas de mensaje (usuario e IA) y su hora de envío.
+   Clases semánticas propias en vez de sobrescribir las utilidades arbitrarias
+   de Tailwind (`text-[13px]`/`text-[10px]`) por especificidad de selectores:
+   así el media query de abajo gana sin !important ni hacks de orden de carga. */
+.chat-msg-text {
+  font-size: 0.8125rem; /* 13px */
+}
+
+.chat-msg-time {
+  font-size: 0.625rem; /* 10px */
+}
+
+/* Pantallas de celular: subir ligeramente el tamaño de fuente para mejorar
+   la legibilidad, sin tocar el layout ni el line-height (`leading-*` sigue
+   viniendo de Tailwind en el propio elemento). */
+@media (max-width: 480px) {
+  .chat-msg-text {
+    font-size: 0.9375rem; /* 15px */
+  }
+
+  .chat-msg-time {
+    font-size: 0.6875rem; /* 11px */
+  }
+}
+
+/* Modo pantalla completa (`.is-fullscreen` en #modal-container, alternada por
+   App.tsx/ChatModal.tsx): en vez de agrandar componente por componente
+   (texto, avatar, burbuja, botones, textarea...), se escala TODO el
+   contenido del chat (#chat-scale-root, el único hijo de #modal-container
+   que NO es el lightbox) un 25% de una sola vez con `transform: scale()`.
+   Esto escala visualmente cualquier cosa que haya adentro (íconos, paddings,
+   bordes, gaps) sin tener que tocar cada clase.
+
+   El truco `width/height: 80%` + `scale(1.25)` con origen top-left es para
+   que, tras escalar, el contenido rellene exactamente el 100% del modal
+   (0.8 × 1.25 = 1) en vez de desbordarse — si se escalara un elemento ya al
+   100% del tamaño del contenedor, el 25% extra se recortaría por el
+   `overflow-hidden` de #modal-container. */
+#modal-container.is-fullscreen #chat-scale-root {
+  width: 80%;
+  height: 80%;
+  transform: scale(1.25);
+  transform-origin: top left;
+}
+
+/* Animación de apertura/cierre del modal y del cambio de tamaño en
+   fullscreen (ver App.tsx: HIDE_ANIMATION_MS debe seguir coincidiendo con
+   la duración de opacity/transform de abajo). */
+#modal-container {
+  transition:
+    width 0.25s ease,
+    height 0.25s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* El tema de SweetAlert2 vive en swalTheme.css (importado aparte en main.tsx,
+   fuera del shadow root) — ver la nota en ese archivo sobre por qué no puede
+   estar acá adentro. */
