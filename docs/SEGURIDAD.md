@@ -11,7 +11,7 @@ El widget adjunta un JWT de vida corta (`Authorization: Bearer <jwt>`) en cada l
 | Cliente JWT + fetcher | Widget-react (POL-72) | **Done** |
 | Emisor `POST /auth/mateo/widget-token` | polaria-wms-api (POL-73) | **Done** (código + host) |
 | Validación en webhook | n8n (POL-71) | Configurar secreto/`iss`/`aud`/`kid` en el workflow |
-| Historial remoto | Nest `/mateo/conversaciones` + tablas `widget_*` | Migración 051 aplicada en dev |
+| Historial remoto | Nest `/mateo/conversaciones` + tablas `widget_*` | Migración 051 + RLS 052 (POL-138) |
 
 ### Claims del JWT (contrato n8n)
 
@@ -25,6 +25,19 @@ El widget adjunta un JWT de vida corta (`Authorization: Bearer <jwt>`) en cada l
 | TTL | 300 s |
 
 Secreto: `MATEO_WIDGET_JWT_SECRET` en el API = credential store de n8n.
+
+### Cierre POL-137
+
+Identificación segura del chat embebido (sin sesión anónima / sin montar a ciegas):
+
+| Escenario | Comportamiento |
+|-----------|----------------|
+| Montar sin tokenFetcher | `initMateoWidget` lanza error |
+| Fetcher rechaza sesión | `TokenAuthError` + `onAuthError` |
+| Historial REST | Bearer WMS vía `conversationTokenFetcher` del host Polaria |
+| JWT widget | solo memoria, nunca `localStorage` |
+
+Tests: `src/embed.test.ts`, `src/lib/authToken.test.ts`, `src/lib/conversationApi.test.ts`
 
 ## Datos sensibles
 
