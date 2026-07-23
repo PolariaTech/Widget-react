@@ -49,6 +49,19 @@ const en: Record<keyof typeof es, string> = {
 
   sentImageAlt: 'Sent image',
 
+  stepsLabel: 'Guided steps',
+  stepsProgressAria: 'Progress: {{done}} of {{total}} steps completed',
+  stepsMarkDoneAria: 'Mark step {{n}} as done',
+  stepsMarkPendingAria: 'Mark step {{n}} as pending',
+  stepsNoDetail: 'No extra detail for this step.',
+  stepsAskButton: 'Ask about this step',
+  stepsAskPrompt: 'Explain this step in more detail: {{step}}',
+
+  tableLabel: 'Table',
+  tableRowsCount: '{{count}} rows',
+  tableRowCountOne: '1 row',
+  tableEmpty: 'No data',
+
   greeting: "Hi, I'm Mateo. How can I help you today?",
 
   typingSrText: 'Mateo is typing…',

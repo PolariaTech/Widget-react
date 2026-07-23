@@ -58,6 +58,21 @@ const es = {
   // MessageBubble.tsx
   sentImageAlt: 'Imagen enviada',
 
+  // ChatSteps.tsx (pasos interactivos en respuestas de Mateo)
+  stepsLabel: 'Pasos guiados',
+  stepsProgressAria: 'Progreso: {{done}} de {{total}} pasos completados',
+  stepsMarkDoneAria: 'Marcar paso {{n}} como hecho',
+  stepsMarkPendingAria: 'Marcar paso {{n}} como pendiente',
+  stepsNoDetail: 'Sin detalle adicional en este paso.',
+  stepsAskButton: 'Preguntar sobre este paso',
+  stepsAskPrompt: 'Explícame con más detalle este paso: {{step}}',
+
+  // ChatTable.tsx
+  tableLabel: 'Tabla',
+  tableRowsCount: '{{count}} filas',
+  tableRowCountOne: '1 fila',
+  tableEmpty: 'Sin datos',
+
   // MessagesArea.tsx
   greeting: 'Hola, soy Mateo. ¿En qué te puedo ayudar hoy?',
 

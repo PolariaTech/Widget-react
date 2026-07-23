@@ -36,6 +36,16 @@
   font-size: 0.625rem; /* 10px */
 }
 
+/* Scroll horizontal suave en tablas del chat (contenido rico de Mateo). */
+.chat-table-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+
+.chat-table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 204, 0.25);
+  border-radius: 9999px;
+}
+
 /* Pantallas de celular: subir ligeramente el tamaño de fuente para mejorar
    la legibilidad, sin tocar el layout ni el line-height (`leading-*` sigue
    viniendo de Tailwind en el propio elemento). */

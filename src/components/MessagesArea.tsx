@@ -8,6 +8,7 @@ interface MessagesAreaProps {
   messages: Message[];
   isSending: boolean;
   onImageClick: (src: string) => void;
+  onAskStep?: (prompt: string) => void;
 }
 
 // Constante de módulo (no un literal recreado en cada render): así `MessageBubble`
@@ -23,7 +24,7 @@ const GREETING_MESSAGE: Message = { role: 'ai', type: 'text', content: t('greeti
  * (`scrollTop`/`scrollHeight`) siempre actúa sobre el contenedor, nunca sobre
  * la columna.
  */
-export function MessagesArea({ messages, isSending, onImageClick }: MessagesAreaProps) {
+export function MessagesArea({ messages, isSending, onImageClick, onAskStep }: MessagesAreaProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -37,7 +38,13 @@ export function MessagesArea({ messages, isSending, onImageClick }: MessagesArea
       <div id="messages-column" className="flex flex-col gap-[12px] w-full max-w-[640px] mx-auto p-[16px]">
         <MessageBubble message={GREETING_MESSAGE} />
         {messages.map((m, i) => (
-          <MessageBubble key={`${m.timestamp}-${i}`} message={m} onImageClick={onImageClick} />
+          <MessageBubble
+            key={`${m.timestamp}-${i}`}
+            message={m}
+            onImageClick={onImageClick}
+            onAskStep={onAskStep}
+            askDisabled={isSending}
+          />
         ))}
         {isSending && <TypingIndicator />}
       </div>

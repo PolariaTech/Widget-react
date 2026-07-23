@@ -1,30 +1,31 @@
 /**
- * webhook.ts — Construcción y envío del payload plano al backend de n8n
- * (POL-72, ver `borradores/PLAN_ACCION_WIDGET_POL-70-71-72-73.md` sección 3).
+ * webhook.ts — Construcción y envío del payload al backend de n8n (POL-72).
  *
- * Body plano `{ message_text, message_type }` — reemplaza la envoltura de
- * WhatsApp Business (`entry[].changes[].value.messages[]`) que usaba este
- * módulo antes. La identidad del visitante ya no viaja en el body (ni el
- * `USER_PHONE` fijo compartido por todos los visitantes, ni ningún otro
- * campo de sesión): viaja en el JWT del header `Authorization`, validado del
- * lado de n8n (POL-71, en paralelo — ver `lib/authToken.ts`).
+ * Body: `{ message_text, message_type }` + identidad del hablante (`id_rol`,
+ * `rol`, `id_usuario`, …) leída del JWT. La autenticación sigue yendo en
+ * `Authorization: Bearer <jwt>` (validado en n8n, POL-71).
  *
- * DECISIÓN DE DISEÑO: el body plano tiene exactamente 2 campos, sin espacio
- * para un caption de imagen aparte (antes `buildImageMessage` aceptaba un
- * `caption` embebido en el mismo mensaje). Cuando el usuario adjunta una
- * imagen CON texto, `useChat.ts` hace dos llamadas secuenciales a
- * `sendToN8n` (imagen, luego texto) en vez de una sola combinada — cada una
- * genera su propia respuesta de Mateo, igual que ya se mostraban como dos
- * burbujas de *entrada* separadas en la UI.
+ * Cuando el usuario adjunta imagen CON texto, `useChat.ts` hace dos POSTs
+ * secuenciales (imagen, luego texto).
  */
 import { N8N_WEBHOOK_URL } from '../config';
 import { fetchWithTimeout } from './http';
 import { t } from '../i18n';
 import { forceRefresh, getValidToken } from './authToken';
+import { speakerClaimsFromToken } from './jwtPayload';
 
 export interface OutgoingMessage {
   message_text: string;
   message_type: 'text' | 'image';
+  /** Rol WMS del usuario logueado (mismo valor que claim JWT `idRol` / `rol`). */
+  id_rol?: string;
+  rol?: string;
+  id_usuario?: string;
+  email?: string;
+  given_name?: string;
+  family_name?: string;
+  codigo_empresa?: string | null;
+  codigo_cuenta?: string | null;
 }
 
 export function buildTextMessage(text: string): OutgoingMessage {
@@ -35,14 +36,110 @@ export function buildImageMessage(imageUrl: string): OutgoingMessage {
   return { message_text: imageUrl, message_type: 'image' };
 }
 
-interface N8nJsonReply {
-  output?: unknown;
-  reply?: unknown;
-  text?: unknown;
+/** Adjunta claims del JWT al body para que n8n/Mateo sepan quién habla. */
+export function withSpeakerClaims(message: OutgoingMessage, token: string): OutgoingMessage {
+  const speaker = speakerClaimsFromToken(token);
+  if (!speaker) return message;
+  return { ...message, ...speaker };
 }
 
-function isN8nJsonReply(value: unknown): value is N8nJsonReply {
-  return typeof value === 'object' && value !== null;
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Convierte estructuras tipo tabla (objetos/arrays de n8n o del LLM) a markdown
+ * de pipes para que `parseRichContent` las pinte con diseño Polaria.
+ */
+function tableLikeToMarkdown(value: unknown): string | null {
+  if (Array.isArray(value) && value.length > 0 && isPlainObject(value[0])) {
+    const headers = Object.keys(value[0]!);
+    if (headers.length < 2) return null;
+    const lines = [
+      headers.join(' | '),
+      ...value.map((row) => {
+        const obj = isPlainObject(row) ? row : {};
+        return headers.map((h) => String(obj[h] ?? '')).join(' | ');
+      }),
+    ];
+    return lines.join('\n');
+  }
+
+  if (!isPlainObject(value)) return null;
+
+  const headers = value.headers;
+  const rows = value.rows;
+  if (Array.isArray(headers) && Array.isArray(rows) && headers.length >= 2) {
+    const headerLine = headers.map((h) => String(h ?? '')).join(' | ');
+    const dataLines = rows.map((row) => {
+      if (Array.isArray(row)) {
+        return headers.map((_, i) => String(row[i] ?? '')).join(' | ');
+      }
+      if (isPlainObject(row)) {
+        return headers.map((h) => String(row[String(h)] ?? '')).join(' | ');
+      }
+      return String(row ?? '');
+    });
+    return [headerLine, ...dataLines].join('\n');
+  }
+
+  // { columns: [...], data: [...] } u otras formas frecuentes
+  const columns = value.columns ?? value.cols;
+  const data = value.data ?? value.items ?? value.records;
+  if (Array.isArray(columns) && Array.isArray(data) && columns.length >= 2) {
+    return tableLikeToMarkdown({ headers: columns, rows: data });
+  }
+
+  return null;
+}
+
+/**
+ * Normaliza las formas habituales de n8n / agentes AI a un string de chat.
+ * - `{ output: "..." }` / `reply` / `text` / `message` / …
+ * - `[{ output: "..." }]` (Respond to Webhook con items)
+ * - `output` como objeto tabla → markdown de pipes
+ */
+function coerceReplyCandidate(value: unknown, depth = 0): string | null {
+  if (depth > 6) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value == null) return null;
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return null;
+    const asTable = tableLikeToMarkdown(value);
+    if (asTable) return asTable;
+
+    const parts = value
+      .map((item) => coerceReplyCandidate(item, depth + 1))
+      .filter((part): part is string => typeof part === 'string' && part.trim().length > 0);
+    if (parts.length === 1) return parts[0]!;
+    if (parts.length > 1) return parts.join('\n\n');
+    return null;
+  }
+
+  if (isPlainObject(value)) {
+    const preferredKeys = [
+      'output',
+      'reply',
+      'text',
+      'message',
+      'content',
+      'response',
+      'answer',
+    ] as const;
+    for (const key of preferredKeys) {
+      if (key in value) {
+        const inner = coerceReplyCandidate(value[key], depth + 1);
+        if (inner) return inner;
+      }
+    }
+
+    const asTable = tableLikeToMarkdown(value);
+    if (asTable) return asTable;
+  }
+
+  return null;
 }
 
 export interface N8nReply {
@@ -53,15 +150,24 @@ export interface N8nReply {
 
 /**
  * n8n normalmente responde `{ output }`/`{ reply }`/`{ text }` con un string.
- * Si la forma es otra cosa (array, objeto vacío, primitivo) no se le muestra
- * el JSON crudo al usuario — eso expondría la forma interna de la respuesta
- * de n8n como si fuera una respuesta real de Mateo.
+ * También aceptamos arrays de items y objetos tabla; si no hay nada usable,
+ * no se le muestra el JSON crudo al usuario.
  */
 function extractReplyText(parsed: unknown): N8nReply {
-  if (isN8nJsonReply(parsed)) {
-    const candidate = parsed.output ?? parsed.reply ?? parsed.text;
-    if (typeof candidate === 'string') return { text: candidate, isError: false };
+  const text = coerceReplyCandidate(parsed);
+  if (text && text.trim().length > 0) {
+    return { text, isError: false };
   }
+
+  const shape =
+    parsed === null
+      ? 'null'
+      : Array.isArray(parsed)
+        ? `array(len=${parsed.length})`
+        : typeof parsed === 'object'
+          ? `object(keys=${Object.keys(parsed as object).join(',')})`
+          : typeof parsed;
+  console.warn(`[Mateo webhook] formato de respuesta no usable: ${shape}`);
   return { text: t('webhookUnexpectedReply'), isError: true };
 }
 
@@ -92,7 +198,8 @@ export async function sendToN8n(message: OutgoingMessage): Promise<N8nReply> {
   }
 
   try {
-    let res = await postMessage(message, token);
+    let payload = withSpeakerClaims(message, token);
+    let res = await postMessage(payload, token);
 
     // n8n a veces responde 403 (JWT inválido / sin permiso) en vez de 401.
     if (res.status === 401 || res.status === 403) {
@@ -101,7 +208,8 @@ export async function sendToN8n(message: OutgoingMessage): Promise<N8nReply> {
       } catch {
         return { text: t('webhookAuthError'), isError: true };
       }
-      res = await postMessage(message, token);
+      payload = withSpeakerClaims(message, token);
+      res = await postMessage(payload, token);
       if (res.status === 401 || res.status === 403) {
         return { text: t('webhookAuthError'), isError: true };
       }

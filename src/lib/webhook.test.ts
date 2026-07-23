@@ -32,15 +32,35 @@ describe('buildTextMessage / buildImageMessage', () => {
     });
   });
 
-  it('el body no incluye from/id/entry ni ningún otro campo de la forma WhatsApp', () => {
+  it('el body base solo incluye message_text y message_type', () => {
     const message = buildTextMessage('hola');
     expect(Object.keys(message).sort()).toEqual(['message_text', 'message_type']);
   });
 });
 
 describe('sendToN8n', () => {
-  it('envía el body plano tal cual, con Authorization: Bearer <jwt>', async () => {
-    configureTokenFetcher(async () => ({ token: 'jwt-valid', expiresIn: 300 }));
+  function toBase64UrlJson(value: unknown): string {
+    const bytes = new TextEncoder().encode(JSON.stringify(value));
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function widgetJwt(payload: Record<string, unknown>): string {
+    return `${toBase64UrlJson({ alg: 'HS256' })}.${toBase64UrlJson(payload)}.sig`;
+  }
+
+  it('envía el body con rol del JWT y Authorization: Bearer <jwt>', async () => {
+    const jwt = widgetJwt({
+      idUsuario: 'usr-1',
+      idRol: 'operador_cuenta',
+      rol: 'operador_cuenta',
+      email: 'ops@acme.test',
+      given_name: 'Luis',
+      codigoEmpresa: 'ACME',
+      codigoCuenta: 'ACME-01',
+    });
+    configureTokenFetcher(async () => ({ token: jwt, expiresIn: 300 }));
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ output: 'hola, soy Mateo' }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -51,8 +71,18 @@ describe('sendToN8n', () => {
     const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(N8N_WEBHOOK_URL);
     expect(options.method).toBe('POST');
-    expect((options.headers as Record<string, string>).Authorization).toBe('Bearer jwt-valid');
-    expect(JSON.parse(options.body as string)).toEqual({ message_text: 'hola', message_type: 'text' });
+    expect((options.headers as Record<string, string>).Authorization).toBe(`Bearer ${jwt}`);
+    expect(JSON.parse(options.body as string)).toEqual({
+      message_text: 'hola',
+      message_type: 'text',
+      id_rol: 'operador_cuenta',
+      rol: 'operador_cuenta',
+      id_usuario: 'usr-1',
+      email: 'ops@acme.test',
+      given_name: 'Luis',
+      codigo_empresa: 'ACME',
+      codigo_cuenta: 'ACME-01',
+    });
   });
 
   it('extrae el texto de reply/text además de output', async () => {
@@ -61,6 +91,38 @@ describe('sendToN8n', () => {
 
     const reply = await sendToN8n(buildTextMessage('hola'));
     expect(reply).toEqual({ text: 'segunda forma', isError: false });
+  });
+
+  it('acepta la forma array típica de n8n: [{ output: "..." }]', async () => {
+    configureTokenFetcher(async () => ({ token: 'jwt-valid', expiresIn: 300 }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse([{ output: 'hola desde array' }])),
+    );
+
+    const reply = await sendToN8n(buildTextMessage('hola'));
+    expect(reply).toEqual({ text: 'hola desde array', isError: false });
+  });
+
+  it('convierte output tabular (array de objetos) a markdown de pipes', async () => {
+    configureTokenFetcher(async () => ({ token: 'jwt-valid', expiresIn: 300 }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          output: [
+            { Ticket: 'T-1', Estado: 'Abierto' },
+            { Ticket: 'T-2', Estado: 'Cerrado' },
+          ],
+        }),
+      ),
+    );
+
+    const reply = await sendToN8n(buildTextMessage('dame tabla'));
+    expect(reply.isError).toBe(false);
+    expect(reply.text).toContain('Ticket | Estado');
+    expect(reply.text).toContain('T-1 | Abierto');
+    expect(reply.text).toContain('T-2 | Cerrado');
   });
 
   it('devuelve un error legible (no el JSON crudo) si la forma de la respuesta es inesperada', async () => {

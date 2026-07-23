@@ -149,7 +149,12 @@ export function ChatModal({ modal, history, chat, lightbox }: ChatModalProps) {
                 />
               ) : (
                 <>
-                  <MessagesArea messages={visibleMessages} isSending={isSending} onImageClick={onOpenLightbox} />
+                  <MessagesArea
+                    messages={visibleMessages}
+                    isSending={isSending}
+                    onImageClick={onOpenLightbox}
+                    onAskStep={onSend}
+                  />
                   <InputFooter
                     key={currentConversationId}
                     selectedImage={selectedImage}
