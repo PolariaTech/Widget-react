@@ -8,7 +8,7 @@ Todas las variables usan el prefijo `VITE_` porque Vite solo expone al código d
 
 | Variable | Tipo | Requerida | Default (dev) | Dónde obtenerla | Impacto si falta o es incorrecta |
 |---|---|---|---|---|---|
-| `VITE_N8N_WEBHOOK_URL` | URL | Sí | `https://polariatech.app.n8n.cloud/webhook/test-mateo-support` | Consola de n8n → workflow "Mateo Support" → nodo Webhook → URL de producción/test | El widget carga normalmente, pero cada mensaje enviado responde "Error al conectar con el servidor." (timeout a los 120s si la URL no existe, o error inmediato si responde 404/500). |
+| `VITE_N8N_WEBHOOK_URL` | URL | Sí | `https://polariatech.app.n8n.cloud/webhook/mateo-support` | Consola de n8n → workflow "Mateo Support" → nodo Webhook → URL de producción/test | El widget carga normalmente, pero cada mensaje enviado responde "Error al conectar con el servidor." (timeout a los 120s si la URL no existe, o error inmediato si responde 404/500). |
 | `VITE_PHONE_NUMBER_ID` | String (numérico) | Sí | `1104260132766227` | Debe coincidir exactamente con el `phone_number_id` que el workflow de n8n espera recibir en `metadata.phone_number_id` | Si no coincide con lo que n8n espera, el workflow puede rechazar el mensaje o enrutarlo mal — coordinar con el equipo de n8n antes de cambiarlo. |
 | `VITE_CLOUDINARY_CLOUD_NAME` | String | Sí (si se usan imágenes) | `ujssaxx6` | Cloudinary → Dashboard → "Cloud name" (arriba a la izquierda) | Sin ella (o con un valor incorrecto), cualquier intento de adjuntar imagen falla con "No se pudo subir la imagen a Cloudinary". El chat de texto sigue funcionando normalmente. |
 | `VITE_CLOUDINARY_UPLOAD_PRESET` | String | Sí (si se usan imágenes) | `mateo_test_unsigned` | Cloudinary → Settings → Upload → Upload presets → debe ser un preset marcado **Unsigned** | Mismo impacto que `CLOUDINARY_CLOUD_NAME`: falla la subida de imágenes con error de Cloudinary. |
@@ -44,7 +44,7 @@ Esto **no significa que no importe protegerlas** — ver el checklist de `docs/S
 `src/config.ts` lee cada variable con un fallback al valor de desarrollo:
 
 ```ts
-export const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL ?? 'https://polariatech.app.n8n.cloud/webhook/test-mateo-support';
+export const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL ?? 'https://polariatech.app.n8n.cloud/webhook/mateo-support';
 ```
 
 El fallback existe **solo** para que `npm run dev`/`npm run build` no se rompan mientras `.env.staging`/`.env.production` no existan todavía — una vez que ese archivo exista con los valores reales de ese ambiente, Vite los carga automáticamente según `--mode` y el fallback nunca se activa.

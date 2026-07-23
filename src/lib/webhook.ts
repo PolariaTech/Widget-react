@@ -94,16 +94,25 @@ export async function sendToN8n(message: OutgoingMessage): Promise<N8nReply> {
   try {
     let res = await postMessage(message, token);
 
-    if (res.status === 401) {
+    // n8n a veces responde 403 (JWT inválido / sin permiso) en vez de 401.
+    if (res.status === 401 || res.status === 403) {
       try {
         token = await forceRefresh();
       } catch {
         return { text: t('webhookAuthError'), isError: true };
       }
       res = await postMessage(message, token);
+      if (res.status === 401 || res.status === 403) {
+        return { text: t('webhookAuthError'), isError: true };
+      }
     }
 
-    if (!res.ok) return { text: t('webhookConnectionError'), isError: true };
+    if (!res.ok) {
+      console.warn(
+        `[Mateo webhook] n8n respondió HTTP ${res.status} en ${N8N_WEBHOOK_URL}`,
+      );
+      return { text: t('webhookConnectionError'), isError: true };
+    }
 
     const raw = await res.text();
     try {
@@ -112,7 +121,8 @@ export async function sendToN8n(message: OutgoingMessage): Promise<N8nReply> {
     } catch {
       return { text: raw, isError: false };
     }
-  } catch {
+  } catch (err) {
+    console.warn('[Mateo webhook] fallo de red/timeout hacia n8n:', err);
     return { text: t('webhookConnectionError'), isError: true };
   }
 }

@@ -85,7 +85,7 @@ MateoWidget.init({
 El widget lee su configuración de `import.meta.env.VITE_*` (Vite carga `.env.development`, `.env.staging` o `.env.production` según el modo). Ejemplo mínimo (ver `.env.example` para la plantilla completa y `docs/VARIABLES_DE_ENTORNO.md` para el detalle de cada variable):
 
 ```bash
-VITE_N8N_WEBHOOK_URL=https://polariatech.app.n8n.cloud/webhook/test-mateo-support
+VITE_N8N_WEBHOOK_URL=https://polariatech.app.n8n.cloud/webhook/mateo-support
 VITE_CLOUDINARY_CLOUD_NAME=ujssaxx6
 VITE_CLOUDINARY_UPLOAD_PRESET=mateo_test_unsigned
 ```

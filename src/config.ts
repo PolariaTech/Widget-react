@@ -11,7 +11,7 @@
  */
 
 /** URL del webhook de n8n que procesa los mensajes del widget. */
-export const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL ?? 'https://polariatech.app.n8n.cloud/webhook/test-mateo-support';
+export const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL ?? 'https://polariatech.app.n8n.cloud/webhook/mateo-support';
 
 /** Cloud name de Cloudinary donde se alojan las imágenes subidas. */
 export const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME ?? 'ujssaxx6';

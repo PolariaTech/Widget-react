@@ -110,7 +110,7 @@ describe('sendToN8n', () => {
     expect((secondCallOptions.headers as Record<string, string>).Authorization).toBe('Bearer jwt-fresh');
   });
 
-  it('si el reintento tras 401 también falla, no reintenta en loop y devuelve un error', async () => {
+  it('si el reintento tras 401 también falla, no reintenta en loop y devuelve error de auth', async () => {
     const tokenFetcher = vi.fn().mockResolvedValueOnce({ token: 'jwt-expired', expiresIn: 300 }).mockResolvedValueOnce({ token: 'jwt-fresh', expiresIn: 300 });
     configureTokenFetcher(tokenFetcher);
 
@@ -122,7 +122,26 @@ describe('sendToN8n', () => {
 
     const reply = await sendToN8n(buildTextMessage('hola'));
 
-    expect(reply).toEqual({ text: t('webhookConnectionError'), isError: true });
+    expect(reply).toEqual({ text: t('webhookAuthError'), isError: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('ante un 403 de n8n, trata como auth: refresca y si sigue fallando muestra error de sesión', async () => {
+    const tokenFetcher = vi
+      .fn()
+      .mockResolvedValueOnce({ token: 'jwt-bad', expiresIn: 300 })
+      .mockResolvedValueOnce({ token: 'jwt-fresh', expiresIn: 300 });
+    configureTokenFetcher(tokenFetcher);
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('forbidden', { status: 403 }))
+      .mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await sendToN8n(buildTextMessage('hola'));
+
+    expect(reply).toEqual({ text: t('webhookAuthError'), isError: true });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
