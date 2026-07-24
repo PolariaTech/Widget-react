@@ -58,7 +58,10 @@ export interface UseConversationsResult {
 
 export function useConversations(): UseConversationsResult {
   const remote = isRemoteConversationMode();
-  const repo = useMemo(() => getConversationRepository(), [remote]);
+  const repo = useMemo(() => {
+    void remote; // invalidar memo si el embed cambia local ↔ remoto
+    return getConversationRepository();
+  }, [remote]);
 
   const [conversations, setConversations] = useState<Conversation[]>(() =>
     remote ? [] : loadConversations(),

@@ -3,7 +3,8 @@ import type { Message } from '../types';
 import { formatMessageTime } from '../lib/format';
 import { parseInline } from '../lib/parseRichContent';
 import { AiIcon } from './AiIcon';
-import { analyzeRichContent, RichBlocks } from './rich/RichMessageContent';
+import { analyzeRichContent } from './rich/analyzeRichContent';
+import { RichBlocks } from './rich/RichMessageContent';
 import { InlineText } from './rich/InlineText';
 import { t } from '../i18n';
 

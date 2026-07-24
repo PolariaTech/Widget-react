@@ -1,21 +1,13 @@
 import type { RichBlock } from '../../lib/parseRichContent';
-import { hasStructuredBlocks, parseRichContent } from '../../lib/parseRichContent';
 import { ChatSteps } from './ChatSteps';
 import { ChatTable } from './ChatTable';
 import { InlineText } from './InlineText';
+import { analyzeRichContent } from './analyzeRichContent';
 
 interface RichMessageContentProps {
   content: string;
   onAskStep?: (prompt: string) => void;
   askDisabled?: boolean;
-}
-
-export function analyzeRichContent(content: string): {
-  blocks: RichBlock[];
-  structured: boolean;
-} {
-  const blocks = parseRichContent(content);
-  return { blocks, structured: hasStructuredBlocks(blocks) };
 }
 
 function CalloutIcon({ tone }: { tone: 'info' | 'warning' | 'tip' }) {
