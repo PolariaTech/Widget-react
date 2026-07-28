@@ -1,9 +1,12 @@
 /**
  * webhook.ts — Construcción y envío del payload al backend de n8n (POL-72).
  *
- * Body: `{ message_text, message_type }` + identidad del hablante (`id_rol`,
- * `rol`, `id_usuario`, …) leída del JWT. La autenticación sigue yendo en
- * `Authorization: Bearer <jwt>` (validado en n8n, POL-71).
+ * Body: `{ message_text, message_type, conversation_id }` + identidad del
+ * hablante (`id_rol`, `rol`, `id_usuario`, …) leída del JWT. La autenticación
+ * sigue yendo en `Authorization: Bearer <jwt>` (validado en n8n, POL-71).
+ *
+ * `conversation_id` aísla la memoria de n8n (Simple Memory) por hilo del
+ * historial — no por usuario.
  *
  * Cuando el usuario adjunta imagen CON texto, `useChat.ts` hace dos POSTs
  * secuenciales (imagen, luego texto).
@@ -17,6 +20,8 @@ import { speakerClaimsFromToken } from './jwtPayload';
 export interface OutgoingMessage {
   message_text: string;
   message_type: 'text' | 'image';
+  /** Id del hilo activo; n8n lo usa como session key de memoria. */
+  conversation_id: string;
   /** Rol WMS del usuario logueado (mismo valor que claim JWT `idRol` / `rol`). */
   id_rol?: string;
   rol?: string;
@@ -28,12 +33,12 @@ export interface OutgoingMessage {
   codigo_cuenta?: string | null;
 }
 
-export function buildTextMessage(text: string): OutgoingMessage {
-  return { message_text: text, message_type: 'text' };
+export function buildTextMessage(text: string, conversationId: string): OutgoingMessage {
+  return { message_text: text, message_type: 'text', conversation_id: conversationId };
 }
 
-export function buildImageMessage(imageUrl: string): OutgoingMessage {
-  return { message_text: imageUrl, message_type: 'image' };
+export function buildImageMessage(imageUrl: string, conversationId: string): OutgoingMessage {
+  return { message_text: imageUrl, message_type: 'image', conversation_id: conversationId };
 }
 
 /** Adjunta claims del JWT al body para que n8n/Mateo sepan quién habla. */

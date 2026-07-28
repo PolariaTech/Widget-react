@@ -6,6 +6,9 @@
  * `capturedConvId` de forma síncrona, antes de cualquier `await`. En modo
  * remoto el id local `conv_*` puede remapease a UUID mientras n8n responde;
  * `addMessage` / `replaceMessage` resuelven ese alias para no perder la burbuja.
+ *
+ * Para n8n se usa `resolveConversationIdForN8n`: en embed es el UUID de
+ * Supabase (`id_conversacion`), no el `conv_*` temporal del cliente.
  */
 import { useCallback, useRef, useState } from 'react';
 import type { SelectedImage } from '../types';
@@ -15,6 +18,8 @@ import { t } from '../i18n';
 
 export interface UseChatArgs {
   ensureConversation: () => string;
+  /** Resuelve el id que n8n debe usar como session key (UUID remoto en embed). */
+  resolveConversationIdForN8n: (convId: string) => Promise<string>;
   addMessage: (convId: string, role: 'user' | 'ai', type: 'text' | 'image', content: string, timestamp?: number, titleOverride?: string, isError?: boolean) => void;
   replaceMessage: (convId: string, type: 'text' | 'image', timestamp: number, newContent: string, newType?: 'text' | 'image') => void;
 }
@@ -26,7 +31,12 @@ export interface UseChatResult {
   sendMessage: (text: string) => Promise<void>;
 }
 
-export function useChat({ ensureConversation, addMessage, replaceMessage }: UseChatArgs): UseChatResult {
+export function useChat({
+  ensureConversation,
+  resolveConversationIdForN8n,
+  addMessage,
+  replaceMessage,
+}: UseChatArgs): UseChatResult {
   const [isSending, setIsSending] = useState(false);
   const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
   // Espejo síncrono de `isSending`: el guard de abajo necesita el valor real
@@ -81,16 +91,19 @@ export function useChat({ ensureConversation, addMessage, replaceMessage }: UseC
 
           replaceMessage(capturedConvId, 'image', sentAt, imageUrl);
 
+          // UUID de Supabase (o id local en standalone) — no el `conv_*` temporal.
+          const n8nConvId = await resolveConversationIdForN8n(capturedConvId);
+
           // El body plano de n8n no tiene un campo de caption aparte (ver
           // webhook.ts) — la imagen y su caption (si la hay) se envían como
           // dos mensajes secuenciales, cada uno con su propia respuesta de
           // Mateo, igual que ya se muestran como dos burbujas de entrada
           // separadas arriba.
-          const imageReply = await sendToN8n(buildImageMessage(imageUrl));
+          const imageReply = await sendToN8n(buildImageMessage(imageUrl, n8nConvId));
           addMessage(capturedConvId, 'ai', 'text', imageReply.text, Date.now(), undefined, imageReply.isError);
 
           if (capturedText) {
-            const captionReply = await sendToN8n(buildTextMessage(capturedText));
+            const captionReply = await sendToN8n(buildTextMessage(capturedText, n8nConvId));
             addMessage(capturedConvId, 'ai', 'text', captionReply.text, Date.now(), undefined, captionReply.isError);
           }
         } else {
@@ -101,15 +114,33 @@ export function useChat({ ensureConversation, addMessage, replaceMessage }: UseC
             return;
           }
 
-          const reply = await sendToN8n(buildTextMessage(capturedText));
+          const n8nConvId = await resolveConversationIdForN8n(capturedConvId);
+          const reply = await sendToN8n(buildTextMessage(capturedText, n8nConvId));
           addMessage(capturedConvId, 'ai', 'text', reply.text, Date.now(), undefined, reply.isError);
         }
+      } catch (err) {
+        console.warn('[useChat] no se pudo resolver conversation_id para n8n:', err);
+        addMessage(
+          capturedConvId,
+          'ai',
+          'text',
+          t('webhookConnectionError'),
+          Date.now(),
+          undefined,
+          true,
+        );
       } finally {
         isSendingRef.current = false;
         setIsSending(false);
       }
     },
-    [selectedImage, ensureConversation, addMessage, replaceMessage],
+    [
+      selectedImage,
+      ensureConversation,
+      resolveConversationIdForN8n,
+      addMessage,
+      replaceMessage,
+    ],
   );
 
   return { isSending, selectedImage, setSelectedImage, sendMessage };

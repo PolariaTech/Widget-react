@@ -13,6 +13,7 @@ function App() {
   const conv = useConversations();
   const chat = useChat({
     ensureConversation: conv.ensureConversation,
+    resolveConversationIdForN8n: conv.resolveConversationIdForN8n,
     addMessage: conv.addMessage,
     replaceMessage: conv.replaceMessage,
   });
