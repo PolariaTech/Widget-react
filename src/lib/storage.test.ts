@@ -4,6 +4,7 @@ import {
   CONVERSATIONS_STORAGE_KEY,
   createConversation,
   deleteConversation,
+  deriveConversationTitle,
   loadConversations,
   replaceMessageContent,
   saveConversations,
@@ -43,6 +44,37 @@ describe('addMessage', () => {
     expect(result[0]?.title).toBe(t('storageImageTitle'));
   });
 
+  it('usa el caption como título cuando la imagen trae titleOverride', () => {
+    const conv = createConversation();
+    const result = addMessage(
+      [conv],
+      conv.id,
+      'user',
+      'image',
+      'data:image/png;base64,AAAA',
+      1000,
+      'foto del pallet',
+    );
+    expect(result[0]?.title).toBe('foto del pallet');
+  });
+
+  it('mejora el título "Imagen" cuando llega un caption de texto después', () => {
+    const conv = createConversation();
+    const afterImage = addMessage([conv], conv.id, 'user', 'image', 'data:image/png;base64,AAAA', 1000);
+    const afterCaption = addMessage(afterImage, conv.id, 'user', 'text', 'etiqueta dañada', 2000);
+    expect(afterCaption[0]?.title).toBe('etiqueta dañada');
+  });
+
+  it('no usa mensajes de IA ni errores para titular', () => {
+    const conv = createConversation();
+    const afterAi = addMessage([conv], conv.id, 'ai', 'text', 'Hola, soy Mateo', 1000);
+    expect(afterAi[0]?.title).toBeNull();
+    const afterError = addMessage(afterAi, conv.id, 'user', 'text', 'falló', 2000, undefined, true);
+    expect(afterError[0]?.title).toBeNull();
+    const afterUser = addMessage(afterError, conv.id, 'user', 'text', 'Prueba continuidad 1', 3000);
+    expect(afterUser[0]?.title).toBe('Prueba continuidad 1');
+  });
+
   it('no sobrescribe un título ya asignado', () => {
     const conv = createConversation();
     const afterFirst = addMessage([conv], conv.id, 'user', 'text', 'primero', 1000);
@@ -55,6 +87,27 @@ describe('addMessage', () => {
     const conv = createConversation();
     const result = addMessage([conv], 'no-existe', 'user', 'text', 'hola', 1000);
     expect(result).toEqual([conv]);
+  });
+});
+
+describe('deriveConversationTitle', () => {
+  it('usa el título guardado si existe', () => {
+    const conv = { ...createConversation(), title: 'Guardado' };
+    expect(deriveConversationTitle(conv)).toBe('Guardado');
+  });
+
+  it('deriva el título del primer mensaje del usuario si title es null', () => {
+    const conv = createConversation();
+    const withMsg = addMessage([conv], conv.id, 'user', 'text', 'Prueba continuidad 1', 1000);
+    // Simula conversaciones antiguas sin título persistido
+    const legacy = { ...withMsg[0]!, title: null };
+    expect(deriveConversationTitle(legacy)).toBe('Prueba continuidad 1');
+  });
+
+  it('usa el fallback si no hay título ni mensajes de usuario', () => {
+    expect(deriveConversationTitle(createConversation(), 'Nueva conversación')).toBe(
+      'Nueva conversación',
+    );
   });
 });
 

@@ -89,10 +89,23 @@ export function loadConversations(): Conversation[] {
         `Se descartaron ${rawList.length - valid.length} conversación(es) corrupta(s) del historial.`,
       );
     }
-    return valid;
+    return backfillMissingTitles(valid);
   } catch {
     return [];
   }
+}
+
+/** Rellena `title` desde el primer mensaje del usuario cuando quedó en null. */
+function backfillMissingTitles(conversations: Conversation[]): Conversation[] {
+  return conversations.map((conv) => {
+    if (conv.title?.trim()) return conv;
+    const firstUser = conv.messages.find(
+      (m) => m.role === 'user' && !m.isError && m.content.trim(),
+    );
+    if (!firstUser) return conv;
+    const title = titleFromUserMessage(firstUser.type, firstUser.content);
+    return title ? { ...conv, title } : conv;
+  });
 }
 
 /** Persiste el arreglo de conversaciones completo en localStorage. */
@@ -115,7 +128,7 @@ export class LocalStorageRepository implements ConversationRepository {
 
   async create(titulo?: string | null): Promise<Conversation> {
     const conv = createConversation();
-    if (titulo) conv.title = titulo.slice(0, 40);
+    if (titulo) conv.title = titulo.slice(0, CONVERSATION_TITLE_MAX_LEN);
     const all = [conv, ...loadConversations()];
     saveConversations(all);
     return conv;
@@ -175,6 +188,47 @@ export function createConversation(): Conversation {
   };
 }
 
+/** Longitud máxima del título persistido / mostrado en el historial. */
+export const CONVERSATION_TITLE_MAX_LEN = 40;
+
+/**
+ * Título a partir de un mensaje de usuario (texto truncado o "Imagen").
+ * No usa mensajes de IA ni errores.
+ */
+export function titleFromUserMessage(
+  type: MessageType,
+  content: string,
+  titleOverride?: string,
+): string | null {
+  const override = titleOverride?.trim();
+  if (override) return override.slice(0, CONVERSATION_TITLE_MAX_LEN);
+  const trimmed = content.trim();
+  if (!trimmed) return null;
+  if (type === 'image') return t('storageImageTitle');
+  return trimmed.slice(0, CONVERSATION_TITLE_MAX_LEN);
+}
+
+/**
+ * Título visible en el historial: título guardado, o primer mensaje del usuario,
+ * o el fallback i18n ("Nueva conversación").
+ */
+export function deriveConversationTitle(
+  conv: Pick<Conversation, 'title' | 'messages'>,
+  fallback: string = t('historyDefaultTitle'),
+): string {
+  const saved = conv.title?.trim();
+  if (saved) return saved;
+
+  const firstUser = conv.messages.find(
+    (m) => m.role === 'user' && !m.isError && m.content.trim(),
+  );
+  if (!firstUser) return fallback;
+
+  return (
+    titleFromUserMessage(firstUser.type, firstUser.content) ?? fallback
+  );
+}
+
 export function addMessage(
   conversations: Conversation[],
   convId: string,
@@ -191,11 +245,25 @@ export function addMessage(
   const conv = conversations[index];
   if (!conv) return conversations;
 
-  const defaultTitle = type === 'text' ? content.slice(0, 40) : t('storageImageTitle');
+  // Solo el primer mensaje real del usuario nombra la conversación.
+  // Si el título actual es el placeholder de imagen y llega un caption de texto, se mejora.
+  const hasPriorUserMessage = conv.messages.some(
+    (m) => m.role === 'user' && !m.isError && m.content.trim(),
+  );
+  const canSetTitle =
+    role === 'user' &&
+    !isError &&
+    ((conv.title == null && !hasPriorUserMessage) ||
+      (conv.title === t('storageImageTitle') && type === 'text'));
+
+  const nextTitle = canSetTitle
+    ? titleFromUserMessage(type, content, titleOverride) ?? conv.title
+    : conv.title;
+
   const updated: Conversation = {
     ...conv,
     updatedAt: Date.now(),
-    title: conv.title ?? (titleOverride?.slice(0, 40) || defaultTitle),
+    title: nextTitle,
     messages: [...conv.messages, { role, type, content, timestamp, isError }],
   };
 

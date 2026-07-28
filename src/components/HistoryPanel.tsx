@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Conversation } from '../types';
 import { confirmDestructiveAction } from '../lib/alerts';
+import { deriveConversationTitle } from '../lib/storage';
 import { t, getLocaleTag } from '../i18n';
 
 interface HistoryPanelProps {
@@ -58,7 +59,7 @@ export function HistoryPanel({ conversations, currentConversationId, onSelect, o
           sorted.map((conv) => {
             const isActive = conv.id === currentConversationId;
             const dateStr = new Date(conv.updatedAt).toLocaleString(getLocaleTag(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-            const title = conv.title || t('historyDefaultTitle');
+            const title = deriveConversationTitle(conv);
             return (
               <div
                 key={conv.id}

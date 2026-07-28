@@ -136,6 +136,7 @@ export function useConversations(): UseConversationsResult {
                 ? {
                     ...serverConv,
                     messages: c.messages,
+                    // No pisar un título ya derivado del primer mensaje local.
                     title: c.title ?? serverConv.title,
                   }
                 : c,
@@ -340,7 +341,18 @@ export function useConversations(): UseConversationsResult {
       void (async () => {
         try {
           const detail = await repo.getDetail(id);
-          setConversations((prev) => prev.map((c) => (c.id === id ? detail : c)));
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === id
+                ? {
+                    ...detail,
+                    // Si el remoto aún no tiene título, conservar el local derivado.
+                    title: detail.title ?? c.title,
+                    messages: detail.messages.length > 0 ? detail.messages : c.messages,
+                  }
+                : c,
+            ),
+          );
         } catch (err) {
           console.warn('No se pudo cargar detalle remoto:', err);
         }
