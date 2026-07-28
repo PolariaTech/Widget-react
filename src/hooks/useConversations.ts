@@ -34,6 +34,12 @@ export interface UseConversationsResult {
   currentConversationId: string | null;
   visibleMessages: Message[];
   ensureConversation: () => string;
+  /**
+   * Id estable para n8n / Simple Memory.
+   * En embed remoto: UUID de `mateo_support.widget_conversacion.id_conversacion`
+   * (espera el create si aún va `conv_*`). En local: el id de la conversación.
+   */
+  resolveConversationIdForN8n: (convId: string) => Promise<string>;
   addMessage: (
     convId: string,
     role: MessageRole,
@@ -287,6 +293,46 @@ export function useConversations(): UseConversationsResult {
     return conv.id;
   }, [remote, repo, scheduleFlush, setCurrentConversationIdSynced, rememberIdAlias]);
 
+  const resolveConversationIdForN8n = useCallback(
+    async (convId: string): Promise<string> => {
+      if (!remote) return resolveLiveConvId(convId);
+
+      const remoteId = await resolveRemoteId(convId);
+      if (isRemoteConversationId(remoteId)) return remoteId;
+
+      // Create falló o el id sigue siendo local: un reintento de create
+      // (misma lógica que flushMessages) para no mandar `conv_*` a n8n.
+      const serverConv = await repo.create(null);
+      rememberIdAlias(convId, serverConv.id);
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === convId || c.id === remoteId
+            ? {
+                ...serverConv,
+                messages: c.messages,
+                title: c.title ?? serverConv.title,
+              }
+            : c,
+        ),
+      );
+      if (
+        currentConversationIdRef.current === convId ||
+        currentConversationIdRef.current === remoteId
+      ) {
+        setCurrentConversationIdSynced(serverConv.id);
+      }
+      return serverConv.id;
+    },
+    [
+      remote,
+      repo,
+      resolveLiveConvId,
+      resolveRemoteId,
+      rememberIdAlias,
+      setCurrentConversationIdSynced,
+    ],
+  );
+
   const addMessage = useCallback(
     (
       convId: string,
@@ -399,6 +445,7 @@ export function useConversations(): UseConversationsResult {
     currentConversationId,
     visibleMessages,
     ensureConversation,
+    resolveConversationIdForN8n,
     addMessage,
     replaceMessage,
     startNewConversation,

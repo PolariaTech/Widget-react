@@ -21,7 +21,8 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
 ```json
 {
   "message_text": "¿Cómo descongelo la cámara 2?",
-  "message_type": "text"
+  "message_type": "text",
+  "conversation_id": "897dcdc5-308a-40af-ba99-3359e4b3131a"
 }
 ```
 
@@ -30,9 +31,12 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
 ```json
 {
   "message_text": "https://res.cloudinary.com/.../abc123.jpg",
-  "message_type": "image"
+  "message_type": "image",
+  "conversation_id": "897dcdc5-308a-40af-ba99-3359e4b3131a"
 }
 ```
+
+`conversation_id` es el **UUID** de `mateo_support.widget_conversacion.id_conversacion` (en embed). n8n debe usarlo como session key de Simple Memory (no el `id_usuario`). El widget espera el create remoto antes de POST a n8n para no enviar el id temporal `conv_*`.
 
 `message_text` en imágenes es la `secure_url` de Cloudinary (nunca el Data URL local). Caption e imagen se envían como dos POSTs secuenciales si el usuario escribió texto junto a la imagen.
 
@@ -61,7 +65,7 @@ También `{ "reply": "..." }` o `{ "text": "..." }` (en ese orden). Si el body n
 curl -X POST "$VITE_N8N_WEBHOOK_URL" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <widget_jwt>" \
-  -d '{"message_text":"prueba manual","message_type":"text"}'
+  -d '{"message_text":"prueba manual","message_type":"text","conversation_id":"897dcdc5-308a-40af-ba99-3359e4b3131a"}'
 ```
 
 ## 2. Cloudinary (subida de imágenes)
