@@ -63,12 +63,16 @@ export function HistoryPanel({ conversations, currentConversationId, onSelect, o
             return (
               <div
                 key={conv.id}
-                className={`flex items-center border-b border-[rgba(248,248,246,0.05)] last:border-b-0 ${isActive ? 'bg-[rgba(0,229,204,0.06)]' : ''}`}
+                className={`group flex items-center border-b border-[rgba(248,248,246,0.05)] last:border-b-0 transition-colors ${
+                  isActive
+                    ? 'bg-[rgba(0,229,204,0.06)]'
+                    : 'hover:bg-white/5'
+                }`}
               >
                 <button
                   onClick={() => onSelect(conv.id)}
                   aria-current={isActive ? 'true' : undefined}
-                  className="flex-1 min-w-0 text-left px-[12px] py-[9px] hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
+                  className="flex-1 min-w-0 text-left px-[12px] py-[9px] focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
                 >
                   <p className="text-[12px] text-[rgba(248,248,246,0.85)] truncate">{title}</p>
                   <p className="text-[10px] text-[rgba(248,248,246,0.55)] mt-[2px]">{dateStr}</p>
@@ -76,10 +80,40 @@ export function HistoryPanel({ conversations, currentConversationId, onSelect, o
                 <button
                   onClick={() => void handleDelete(conv.id, title)}
                   aria-label={t('historyDeleteItemAria', { title })}
-                  className="shrink-0 mr-[8px] w-[24px] h-[24px] flex items-center justify-center rounded-[6px] text-[rgba(248,248,246,0.3)] hover:text-[rgba(248,248,246,0.8)] hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
+                  className="shrink-0 mr-[8px] w-[28px] h-[28px] flex items-center justify-center rounded-[8px] text-[rgba(248,248,246,0.35)] opacity-70 group-hover:opacity-100 hover:text-[#ff7b7b] hover:bg-[rgba(255,80,80,0.12)] transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
                 >
-                  <svg className="w-[12px] h-[12px]" fill="none" viewBox="0 0 12 12">
-                    <path d="M2 3.5h8M4.5 3.5V2.5a1 1 0 011-1h1a1 1 0 011 1v1M4 3.5v6.5a1 1 0 001 1h2a1 1 0 001-1V3.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.1" />
+                  <svg
+                    className="w-[14px] h-[14px]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M3 6h18"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M8 6V4.75A1.75 1.75 0 0 1 9.75 3h4.5A1.75 1.75 0 0 1 16 4.75V6"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M19 6v13.25A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 19.25V6"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M10 11v5M14 11v5"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </button>
               </div>

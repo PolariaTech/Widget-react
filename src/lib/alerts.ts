@@ -1,31 +1,24 @@
 /**
- * alerts.ts — Alertas con la estética de Mateo Support (fondo oscuro con
- * degradado, acento teal, tipografía Inter), reemplazando los `alert()`
- * nativos del navegador. Paleta tomada de paleta-colores-polaria.md.
+ * alerts.ts — Alertas con estética Polaria (PolariaFormModal), vía SweetAlert2.
  *
- * `buttonsStyling: false` delega todo el estilo del botón a `mateo-swal-confirm`
- * (definida en swalTheme.css) en vez de a los estilos inline por defecto de SweetAlert2.
- *
- * SweetAlert2 se monta siempre en `document.body` — su propio `getContainer()`
- * interno usa `document.body.querySelector(...)` sin importar el `target` que
- * se le pase, así que no puede vivir dentro del shadow root del widget (ver
- * main.tsx). Por eso su hoja de estilos (swalTheme.css) se importa aparte,
- * sin `?inline`, para que Vite la inyecte en el `<head>` del documento normal.
+ * `buttonsStyling: false` delega el estilo a `swalTheme.css`.
+ * SweetAlert2 monta en `document.body` (fuera del shadow root); ver main.tsx.
  */
 import { IMAGE_VALIDATION } from '../config';
 import { t } from '../i18n';
 
 const THEME = {
-  background: 'linear-gradient(159.676deg, rgba(4,14,20,0.97) 8.4861%, rgba(2,6,9,0.98) 91.514%)',
+  background: 'rgba(0, 229, 204, 0.08)',
   color: '#f8f8f6',
-  iconColor: '#00e5cc',
-  backdrop: 'rgba(2,6,9,0.7)',
+  iconColor: '#f5a524',
+  backdrop: 'rgba(2, 6, 9, 0.8)',
   confirmButtonText: t('alertGotIt'),
   buttonsStyling: false,
   customClass: {
     popup: 'mateo-swal-popup',
     title: 'mateo-swal-title',
     htmlContainer: 'mateo-swal-text',
+    actions: 'mateo-swal-actions',
     confirmButton: 'mateo-swal-confirm',
   },
 } as const;
@@ -86,6 +79,7 @@ export async function showAuthSessionError(): Promise<void> {
   void Swal.fire({
     ...THEME,
     icon: 'error',
+    iconColor: '#f87171',
     title: t('webhookAuthError'),
     text: t('webhookAuthError'),
   });
@@ -102,8 +96,11 @@ export async function confirmDestructiveAction(title: string, text: string, conf
     confirmButtonText,
     showCancelButton: true,
     cancelButtonText: t('alertCancel'),
+    reverseButtons: true,
+    focusCancel: true,
     customClass: {
       ...THEME.customClass,
+      confirmButton: 'mateo-swal-confirm-danger',
       cancelButton: 'mateo-swal-cancel',
     },
   });
