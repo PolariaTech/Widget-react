@@ -27,6 +27,8 @@ export interface OutgoingMessage {
   rol?: string;
   id_usuario?: string;
   email?: string;
+  /** Teléfono WMS (`usuario.telefono`) desde el JWT del widget. */
+  phone_number?: string | null;
   given_name?: string;
   family_name?: string;
   codigo_empresa?: string | null;
