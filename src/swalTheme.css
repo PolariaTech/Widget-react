@@ -1,75 +1,152 @@
 /**
- * swalTheme.css — Tema de SweetAlert2 (lib/alerts.ts) con la misma estética
- * del widget: fondo casi negro con degradado, borde/acento teal, tipografía
- * Inter. `buttonsStyling: false` en alerts.ts es lo que deja que estas reglas
- * controlen el botón en vez de los estilos inline por defecto de SweetAlert2.
+ * swalTheme.css — SweetAlert2 alineado con PolariaFormModal del frontend:
+ * panel t-08, borde t-20, rounded-2xl, glow suave, pie con Cancelar + acción.
  *
- * Vive FUERA del bundle CSS del widget (index.css, inyectado dentro del
- * shadow root — ver main.tsx) a propósito: SweetAlert2 siempre monta sus
- * popups en `document.body` sin importar el `target` que se le pase (su
- * propio `getContainer()` interno usa `document.body.querySelector(...)`),
- * así que no puede vivir dentro de un shadow root. Este archivo se importa
- * en main.tsx sin `?inline`, para que Vite lo inyecte como de costumbre en el
- * `<head>` del documento normal — la única porción de CSS del widget que
- * intencionalmente no está aislada, acotada a estas clases con prefijo
- * `mateo-swal-` para minimizar el riesgo de colisión con el sitio anfitrión.
+ * Vive FUERA del shadow root (ver main.tsx): SweetAlert2 monta en document.body.
+ * Prefijo `mateo-swal-` para no colisionar con el host.
  */
-.mateo-swal-popup {
-  border: 1px solid rgba(0, 229, 204, 0.18);
-  border-radius: 22px !important;
-  box-shadow: 0px 8px 48px 0px rgba(0, 0, 0, 0.6);
-  font-family: 'Inter', sans-serif;
+
+.mateo-swal-popup.swal2-popup {
+  width: min(28rem, calc(100vw - 2rem)) !important;
+  padding: 1.5rem !important;
+  background: rgba(0, 229, 204, 0.08) !important;
+  border: 1px solid rgba(0, 229, 204, 0.2) !important;
+  border-radius: 1rem !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 229, 204, 0.06),
+    0 16px 48px rgba(0, 0, 0, 0.55),
+    0 0 40px rgba(0, 229, 204, 0.12) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #f8f8f6 !important;
+}
+
+.mateo-swal-popup .swal2-header {
+  align-items: center !important;
+  padding: 0 !important;
+  margin: 0 0 0.75rem !important;
+}
+
+.mateo-swal-popup .swal2-icon {
+  margin: 0 auto 0.75rem !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-width: 2px !important;
+}
+
+.mateo-swal-popup .swal2-icon.swal2-warning {
+  border-color: rgba(245, 165, 36, 0.45) !important;
+  color: #f5a524 !important;
+}
+
+.mateo-swal-popup .swal2-icon.swal2-warning .swal2-icon-content {
+  font-size: 1.35rem !important;
+  color: #f5a524 !important;
+}
+
+.mateo-swal-popup .swal2-icon.swal2-error {
+  border-color: rgba(248, 113, 113, 0.45) !important;
+  color: #f87171 !important;
 }
 
 .mateo-swal-title {
+  margin: 0 !important;
+  padding: 0 !important;
   color: #f8f8f6 !important;
-  font-size: 16px !important;
-  font-weight: 600;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  text-align: center !important;
 }
 
 .mateo-swal-text {
-  color: rgba(248, 248, 246, 0.85) !important;
-  font-size: 13px !important;
-  line-height: 19px;
+  margin: 0.5rem 0 0 !important;
+  padding: 0 !important;
+  color: rgba(248, 248, 246, 0.5) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.45 !important;
+  text-align: center !important;
 }
 
+.mateo-swal-actions {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
+  margin: 1rem 0 0 !important;
+  padding: 1rem 0 0 !important;
+  border-top: 1px solid rgba(248, 248, 246, 0.08);
+}
+
+.mateo-swal-confirm,
+.mateo-swal-confirm-danger,
+.mateo-swal-cancel {
+  margin: 0 !important;
+  min-width: 7rem;
+  border-radius: 0.75rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  padding: 0.625rem 1rem !important;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+/* Primario Polaria (teal sólido) — alertas informativas */
 .mateo-swal-confirm {
-  background: rgba(0, 229, 204, 0.15);
-  border: 1px solid rgba(0, 229, 204, 0.3);
-  border-radius: 10px;
-  color: #00e5cc;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 22px;
-  transition: background-color 0.15s ease;
+  background: #00e5cc !important;
+  border: 1px solid #00e5cc !important;
+  color: #020609 !important;
 }
 
 .mateo-swal-confirm:hover {
-  background: rgba(0, 229, 204, 0.28);
+  opacity: 0.9;
 }
 
 .mateo-swal-confirm:focus {
-  box-shadow: 0 0 0 2px rgba(0, 229, 204, 0.5);
   outline: none;
+  box-shadow: 0 0 0 2px #020609, 0 0 0 4px #00e5cc;
 }
 
+/* Destructivo — peligro Polaria */
+.mateo-swal-confirm-danger {
+  background: rgba(248, 113, 113, 0.12) !important;
+  border: 1px solid rgba(248, 113, 113, 0.35) !important;
+  color: #f87171 !important;
+  font-weight: 600 !important;
+}
+
+.mateo-swal-confirm-danger:hover {
+  background: rgba(248, 113, 113, 0.2) !important;
+  border-color: rgba(248, 113, 113, 0.5) !important;
+}
+
+.mateo-swal-confirm-danger:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #020609, 0 0 0 4px rgba(248, 113, 113, 0.55);
+}
+
+/* Cancelar — outline w-08 */
 .mateo-swal-cancel {
-  background: transparent;
-  border: 1px solid rgba(248, 248, 246, 0.15);
-  border-radius: 10px;
-  color: rgba(248, 248, 246, 0.7);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 22px;
-  margin-inline-end: 8px;
-  transition: background-color 0.15s ease;
+  background: transparent !important;
+  border: 1px solid rgba(248, 248, 246, 0.08) !important;
+  color: #f8f8f6 !important;
+  font-weight: 500 !important;
 }
 
 .mateo-swal-cancel:hover {
-  background: rgba(248, 248, 246, 0.08);
+  border-color: rgba(0, 229, 204, 0.2) !important;
+  color: #00e5cc !important;
 }
 
 .mateo-swal-cancel:focus {
-  box-shadow: 0 0 0 2px rgba(248, 248, 246, 0.3);
   outline: none;
+  box-shadow: 0 0 0 2px #020609, 0 0 0 4px #00e5cc;
 }

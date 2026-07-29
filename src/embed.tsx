@@ -31,11 +31,13 @@ export { configureTokenFetcher, onAuthError, isTokenFetcherConfigured } from './
 
 function ensureHostSwalStyles(): void {
   if (typeof document === 'undefined') return;
-  if (document.getElementById('mateo-swal-theme')) return;
-  const el = document.createElement('style');
-  el.id = 'mateo-swal-theme';
+  let el = document.getElementById('mateo-swal-theme') as HTMLStyleElement | null;
+  if (!el) {
+    el = document.createElement('style');
+    el.id = 'mateo-swal-theme';
+    document.head.appendChild(el);
+  }
   el.textContent = swalStyles;
-  document.head.appendChild(el);
 }
 
 export interface InitMateoWidgetOptions {
