@@ -36,7 +36,9 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
 }
 ```
 
-`conversation_id` es el **UUID** de `mateo_support.widget_conversacion.id_conversacion` (en embed). n8n debe usarlo como session key de Simple Memory (no el `id_usuario`). El widget espera el create remoto antes de POST a n8n para no enviar el id temporal `conv_*`.
+`conversation_id` es el **UUID** de `mateo_support.widget_conversacion.id_conversacion` (en embed). n8n debe usarlo como session key de Simple Memory (no el `id_usuario`). El widget espera el create remoto antes de POST a n8n para no enviar el id temporal `conv_*`. Va **solo en el body** (no en el JWT).
+
+`phone_number` viene del claim JWT del widget (`usuario.telefono` en WMS) y también se reenvía en el body.
 
 `message_text` en imágenes es la `secure_url` de Cloudinary (nunca el Data URL local). Caption e imagen se envían como dos POSTs secuenciales si el usuario escribió texto junto a la imagen.
 

@@ -21,6 +21,7 @@ describe('decodeJwtPayload / speakerClaimsFromToken', () => {
       idRol: 'administrador_cuenta',
       rol: 'administrador_cuenta',
       email: 'ana@acme.test',
+      phone_number: '+573001112233',
       given_name: 'Ana',
       family_name: 'Pérez',
       codigoEmpresa: 'ACME',
@@ -30,6 +31,7 @@ describe('decodeJwtPayload / speakerClaimsFromToken', () => {
     expect(decodeJwtPayload(token)).toMatchObject({
       idUsuario: 'usr-9',
       idRol: 'administrador_cuenta',
+      phone_number: '+573001112233',
     });
 
     expect(speakerClaimsFromToken(token)).toEqual({
@@ -37,6 +39,7 @@ describe('decodeJwtPayload / speakerClaimsFromToken', () => {
       rol: 'administrador_cuenta',
       id_usuario: 'usr-9',
       email: 'ana@acme.test',
+      phone_number: '+573001112233',
       given_name: 'Ana',
       family_name: 'Pérez',
       codigo_empresa: 'ACME',

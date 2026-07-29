@@ -37,6 +37,7 @@ export interface WidgetSpeakerClaims {
   rol: string;
   id_usuario: string;
   email?: string;
+  phone_number?: string | null;
   given_name?: string;
   family_name?: string;
   codigo_empresa?: string | null;
@@ -60,6 +61,10 @@ export function speakerClaimsFromToken(token: string): WidgetSpeakerClaims | nul
     rol: typeof payload.rol === 'string' ? payload.rol : idRol,
     id_usuario: idUsuario,
     email: typeof payload.email === 'string' ? payload.email : undefined,
+    phone_number:
+      typeof payload.phone_number === 'string' || payload.phone_number === null
+        ? (payload.phone_number as string | null)
+        : undefined,
     given_name: typeof payload.given_name === 'string' ? payload.given_name : undefined,
     family_name: typeof payload.family_name === 'string' ? payload.family_name : undefined,
     codigo_empresa:
