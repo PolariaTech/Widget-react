@@ -11,7 +11,8 @@ export type InlineNode =
   | { type: 'bold'; children: InlineNode[] }
   | { type: 'italic'; children: InlineNode[] }
   | { type: 'strike'; children: InlineNode[] }
-  | { type: 'code'; text: string };
+  | { type: 'code'; text: string }
+  | { type: 'link'; href: string; children: InlineNode[]; download?: boolean };
 
 export type RichBlock =
   | { type: 'paragraph'; children: InlineNode[] }
@@ -32,6 +33,95 @@ const CALLOUT_RE = /^(nota|importante|aviso|advertencia|tip|consejo|info)\s*:\s*
 const DIVIDER_RE = /^-{3,}$|^\*{3,}$|^_{3,}$/;
 const QUOTE_RE = /^>\s+(.+)$/;
 const PRE_FENCE_RE = /^```/;
+const FILE_NAME_RE = /\.(pdf|docx?|xlsx?|pptx?|txt|csv|zip)$/i;
+
+function sanitizeHref(raw: string): string | null {
+  const trimmed = raw.trim().replace(/[),.;:!?]+$/g, '');
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
+function isDriveHref(href: string): boolean {
+  try {
+    const host = new URL(href).hostname.toLowerCase();
+    return host.endsWith('drive.google.com') || host.endsWith('docs.google.com');
+  } catch {
+    return false;
+  }
+}
+
+function linkNode(href: string, children: InlineNode[], download = false): InlineNode {
+  return download ? { type: 'link', href, children, download: true } : { type: 'link', href, children };
+}
+
+function flattenInlineText(nodes: InlineNode[]): string {
+  return nodes
+    .map((node) => {
+      if (node.type === 'text' || node.type === 'code') return node.text;
+      if (node.type === 'link') return flattenInlineText(node.children) || node.href;
+      if ('children' in node) return flattenInlineText(node.children);
+      return '';
+    })
+    .join('');
+}
+
+function findFirstHref(nodes: InlineNode[]): string | null {
+  for (const node of nodes) {
+    if (node.type === 'link') return node.href;
+    if ('children' in node) {
+      const nested = findFirstHref(node.children);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
+function looksLikeRuta(nodes: InlineNode[]): boolean {
+  return /ruta\s*:/i.test(flattenInlineText(nodes));
+}
+
+function looksLikeEnlace(nodes: InlineNode[]): boolean {
+  return /enlace\s*:/i.test(flattenInlineText(nodes));
+}
+
+/** Reconstruye "Ruta: archivo.pdf" como un solo enlace (la ruta completa, no un fragmento). */
+function relinkRutaItem(nodes: InlineNode[], href: string): InlineNode[] {
+  const text = flattenInlineText(nodes);
+  const matched = text.match(/^(.*?ruta\s*:)\s*(.+)$/i);
+  if (!matched) return nodes;
+
+  const filePath = matched[2]!.trim().replace(/^[_*]+|[_*]+$/g, '');
+  if (!filePath) return nodes;
+
+  const download = !isDriveHref(href) && FILE_NAME_RE.test(filePath);
+  return [
+    { type: 'bold', children: [{ type: 'text', text: 'Ruta:' }] },
+    { type: 'text', text: ' ' },
+    linkNode(href, [{ type: 'text', text: filePath }], download),
+  ];
+}
+
+/** Si un ítem "Enlace" trae URL y el anterior es "Ruta", toda la ruta apunta a ese documento. */
+export function linkifyDocumentRoutes(blocks: RichBlock[]): RichBlock[] {
+  return blocks.map((block) => {
+    if (block.type !== 'list') return block;
+    const items = block.items.map((item) => [...item]);
+    for (let i = 0; i < items.length; i += 1) {
+      const href = findFirstHref(items[i]!);
+      if (!href || !looksLikeEnlace(items[i]!)) continue;
+      if (i === 0) continue;
+      const prev = items[i - 1]!;
+      if (!looksLikeRuta(prev)) continue;
+      items[i - 1] = relinkRutaItem(prev, href);
+    }
+    return { ...block, items };
+  });
+}
 
 function splitPipeRow(line: string): string[] {
   const trimmed = line.trim();
@@ -74,7 +164,7 @@ export function parseInline(text: string): InlineNode[] {
 
   const nodes: InlineNode[] = [];
   const pattern =
-    /```([^`]+?)```|\*\*(.+?)\*\*|\*([^*\n]+?)\*|_([^_\n]+?)_|~([^~\n]+?)~|`([^`\n]+?)`/g;
+    /\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>"'`\]]+)|```([^`]+?)```|\*\*(.+?)\*\*|\*([^*\n]+?)\*|(?<![A-Za-z0-9])_([^_\n]+?)_(?![A-Za-z0-9.])|~([^~\n]+?)~|`([^`\n]+?)`/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -82,18 +172,32 @@ export function parseInline(text: string): InlineNode[] {
     if (match.index > lastIndex) {
       nodes.push({ type: 'text', text: text.slice(lastIndex, match.index) });
     }
-    if (match[1] !== undefined) {
-      nodes.push({ type: 'code', text: match[1] });
-    } else if (match[2] !== undefined) {
-      nodes.push({ type: 'bold', children: parseInline(match[2]) });
-    } else if (match[3] !== undefined) {
-      nodes.push({ type: 'bold', children: parseInline(match[3]) });
+    const markdownHref = match[2] !== undefined ? sanitizeHref(match[2]) : null;
+    const bareRaw = match[3];
+    const bareHref = bareRaw !== undefined ? sanitizeHref(bareRaw) : null;
+    if (markdownHref) {
+      // Mostrar la URL, no el rótulo ("Ver documento").
+      nodes.push(linkNode(markdownHref, [{ type: 'text', text: markdownHref }]));
+    } else if (bareHref && bareRaw !== undefined) {
+      const stripped = bareRaw.replace(/[),.;:!?]+$/g, '');
+      const trailingLen = bareRaw.length - stripped.length;
+      nodes.push(linkNode(bareHref, [{ type: 'text', text: bareHref }]));
+      lastIndex = match.index + match[0].length - trailingLen;
+      continue;
+    } else if (match[2] !== undefined || match[3] !== undefined) {
+      nodes.push({ type: 'text', text: match[0] });
     } else if (match[4] !== undefined) {
-      nodes.push({ type: 'italic', children: parseInline(match[4]) });
+      nodes.push({ type: 'code', text: match[4] });
     } else if (match[5] !== undefined) {
-      nodes.push({ type: 'strike', children: parseInline(match[5]) });
+      nodes.push({ type: 'bold', children: parseInline(match[5]) });
     } else if (match[6] !== undefined) {
-      nodes.push({ type: 'code', text: match[6] });
+      nodes.push({ type: 'bold', children: parseInline(match[6]) });
+    } else if (match[7] !== undefined) {
+      nodes.push({ type: 'italic', children: parseInline(match[7]) });
+    } else if (match[8] !== undefined) {
+      nodes.push({ type: 'strike', children: parseInline(match[8]) });
+    } else if (match[9] !== undefined) {
+      nodes.push({ type: 'code', text: match[9] });
     }
     lastIndex = match.index + match[0].length;
   }
@@ -399,5 +503,5 @@ export function parseRichContent(raw: string): RichBlock[] {
   }
 
   flushParagraph();
-  return blocks;
+  return linkifyDocumentRoutes(blocks);
 }

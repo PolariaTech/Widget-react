@@ -184,13 +184,21 @@ export function getValidToken(): Promise<string> {
   return refreshToken();
 }
 
-/** Solo para tests: limpia todo el estado del módulo entre casos (el token vive en variables de módulo, no en una instancia). */
-export function __resetTokenManagerForTests(): void {
+/**
+ * Cierra el estado de autenticación del widget (token en memoria, timers, fetcher).
+ * Lo llama el host al desmontar o cuando Polaria cierra sesión.
+ */
+export function resetTokenManager(): void {
   fetcher = null;
   currentToken = null;
   expiresAt = null;
   clearProactiveTimer();
   inFlightRefresh = null;
   erroredOut = false;
+}
+
+/** Solo para tests: limpia todo el estado del módulo entre casos (el token vive en variables de módulo, no en una instancia). */
+export function __resetTokenManagerForTests(): void {
+  resetTokenManager();
   authErrorListeners.clear();
 }

@@ -1,3 +1,6 @@
+import { parseInline } from '../../lib/parseRichContent';
+import { InlineText } from './InlineText';
+
 interface ChatTableProps {
   headers: string[];
   rows: string[][];
@@ -50,7 +53,13 @@ export function ChatTable({ headers, rows }: ChatTableProps) {
                           : 'text-[rgba(248,248,246,0.82)]'
                       }`}
                     >
-                      <span className="block break-words">{row[cellIndex] || '—'}</span>
+                      <span className="block break-words">
+                        {row[cellIndex] ? (
+                          <InlineText nodes={parseInline(row[cellIndex]!)} />
+                        ) : (
+                          '—'
+                        )}
+                      </span>
                     </td>
                   ))}
                 </tr>
