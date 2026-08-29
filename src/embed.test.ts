@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   __resetTokenManagerForTests,
   configureTokenFetcher,
+  getValidToken,
 } from './lib/authToken';
 import { initMateoWidget, unmountMateoWidget } from './embed';
 
@@ -50,5 +51,18 @@ describe('initMateoWidget — POL-137 identificación segura', () => {
       close: expect.any(Function),
     });
     expect(container.shadowRoot).toBeTruthy();
+  });
+
+  it('limpia el JWT en memoria al desmontar (cierre de sesión del host)', async () => {
+    configureTokenFetcher(async () => ({ token: 'jwt-session', expiresIn: 300 }));
+    initMateoWidget({ container });
+
+    await expect(getValidToken()).resolves.toBe('jwt-session');
+
+    unmountMateoWidget();
+
+    await expect(getValidToken()).rejects.toMatchObject({
+      name: 'TokenAuthError',
+    });
   });
 });

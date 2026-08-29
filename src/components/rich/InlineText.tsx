@@ -1,10 +1,34 @@
+import type { ReactNode } from 'react';
 import type { InlineNode } from '../../lib/parseRichContent';
 
 interface InlineTextProps {
   nodes: InlineNode[];
 }
 
-/** Renderiza nodos inline estilo WhatsApp (negrita, cursiva, tachado, mono) sin HTML crudo. */
+function ChatLink({
+  href,
+  download,
+  children,
+}: {
+  href: string;
+  download?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      download={download || undefined}
+      title={href}
+      className="text-[#00e5cc] underline underline-offset-2 decoration-[#00e5cc] break-all hover:opacity-90"
+    >
+      {children}
+    </a>
+  );
+}
+
+/** Renderiza nodos inline estilo WhatsApp (negrita, cursiva, tachado, mono, enlaces) sin HTML crudo. */
 export function InlineText({ nodes }: InlineTextProps) {
   return (
     <>
@@ -39,6 +63,12 @@ export function InlineText({ nodes }: InlineTextProps) {
               >
                 {node.text}
               </code>
+            );
+          case 'link':
+            return (
+              <ChatLink key={key} href={node.href} download={node.download}>
+                <InlineText nodes={node.children} />
+              </ChatLink>
             );
           default:
             return null;

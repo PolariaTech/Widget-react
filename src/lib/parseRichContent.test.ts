@@ -31,6 +31,31 @@ describe('parseInline', () => {
       },
     ]);
   });
+
+  it('convierte [Ver documento](url) en un enlace que muestra la URL', () => {
+    const href = 'https://drive.google.com/file/d/abc123/view';
+    expect(parseInline(`**Enlace:** [Ver documento](${href})`)).toEqual([
+      { type: 'bold', children: [{ type: 'text', text: 'Enlace:' }] },
+      { type: 'text', text: ' ' },
+      {
+        type: 'link',
+        href,
+        children: [{ type: 'text', text: href }],
+      },
+    ]);
+  });
+
+  it('autolinkea URLs sueltas http(s)', () => {
+    expect(parseInline('Mira https://polaria.tech/docs.')).toEqual([
+      { type: 'text', text: 'Mira ' },
+      {
+        type: 'link',
+        href: 'https://polaria.tech/docs',
+        children: [{ type: 'text', text: 'https://polaria.tech/docs' }],
+      },
+      { type: 'text', text: '.' },
+    ]);
+  });
 });
 
 describe('parseRichContent', () => {
@@ -155,5 +180,33 @@ codigo
 `);
     expect(blocks.map((b) => b.type)).toEqual(['quote', 'pre']);
     expect(blocks[1]).toEqual({ type: 'pre', text: 'codigo' });
+  });
+
+  it('enlaza la ruta completa del PDF con el mismo enlace de Drive (no uc/download)', () => {
+    const href = 'https://drive.google.com/file/d/1h1qjmG6LBoxZxjJK-zbBO2rZHo7n4WxP/view';
+    const blocks = parseRichContent(`
+- **Ruta:** *02METODOLOGIA/METODOLOGIADETRABAJOv1.2.pdf*
+- **Enlace:** [Ver documento](${href})
+`);
+    const list = blocks.find((b) => b.type === 'list');
+    expect(list?.type).toBe('list');
+    if (list?.type !== 'list') return;
+
+    const ruta = list.items[0]!;
+    const enlace = list.items[1]!;
+    const rutaLink = ruta.find((n) => n.type === 'link');
+    const enlaceLink = enlace.find((n) => n.type === 'link');
+
+    expect(enlaceLink).toMatchObject({
+      type: 'link',
+      href,
+      children: [{ type: 'text', text: href }],
+    });
+    expect(rutaLink).toMatchObject({
+      type: 'link',
+      href,
+      children: [{ type: 'text', text: '02METODOLOGIA/METODOLOGIADETRABAJOv1.2.pdf' }],
+    });
+    expect(rutaLink && 'download' in rutaLink ? rutaLink.download : undefined).toBeUndefined();
   });
 });

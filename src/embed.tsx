@@ -15,6 +15,7 @@ import {
   configureTokenFetcher,
   isTokenFetcherConfigured,
   onAuthError,
+  resetTokenManager,
   type TokenAuthError,
   type TokenFetcher,
 } from './lib/authToken';
@@ -27,7 +28,7 @@ export type {
   TokenFetchResult,
   TokenAuthError,
 } from './lib/authToken';
-export { configureTokenFetcher, onAuthError, isTokenFetcherConfigured } from './lib/authToken';
+export { configureTokenFetcher, onAuthError, isTokenFetcherConfigured, resetTokenManager } from './lib/authToken';
 
 function ensureHostSwalStyles(): void {
   if (typeof document === 'undefined') return;
@@ -157,6 +158,8 @@ export function mount(
 }
 
 export function unmountMateoWidget(_container?: HTMLElement): void {
+  closeChatFromHost();
+  resetTokenManager();
   if (!active) return;
   active.unsubscribeAuth?.();
   active.root.unmount();
@@ -176,6 +179,7 @@ export const MateoWidget = {
   close: closeMateoWidget,
   configureTokenFetcher,
   onAuthError,
+  resetAuth: resetTokenManager,
 };
 
 declare global {

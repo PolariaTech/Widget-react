@@ -6,6 +6,7 @@ import {
   getValidToken,
   onAuthError,
   refreshToken,
+  resetTokenManager,
   TokenAuthError,
 } from './authToken';
 
@@ -182,6 +183,19 @@ describe('llamadas concurrentes', () => {
 
     expect(token1).toBe('jwt-1');
     expect(token2).toBe('jwt-1');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('resetTokenManager', () => {
+  it('borra el token en memoria para que no sobreviva al cierre de sesión del host', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ token: 'jwt-1', expiresIn: 300 });
+    configureTokenFetcher(fetcher);
+    await getValidToken();
+
+    resetTokenManager();
+
+    await expect(getValidToken()).rejects.toBeInstanceOf(TokenAuthError);
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });
