@@ -2,7 +2,18 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) | Versionado: [Semantic Versioning](https://semver.org/lang/es/)
 
-## [Unreleased]
+La versión de **producto** Polaria WMS (web + API + BD + este widget) es **2.4.3**. Los números 0.1.0 / 0.2.0 de abajo son el historial interno previo del widget.
+
+## [2.4.3] — 2026-08-29
+
+Alineado con Polaria WMS 2.4.3.
+
+### Added
+- Enlaces del chat subrayados; el clic abre otra pestaña.
+- Nombre de PDF en “ruta” como descarga cuando hay URL válida.
+
+### Changed
+- El widget se cierra cuando caduca o se cierra la sesión de Polaria (12 h).
 
 ## [0.2.0] — 2026-07-16
 
@@ -85,4 +96,4 @@ Primera versión endurecida del widget tras una auditoría técnica de 6 agentes
 
 ---
 
-**Nota sobre este primer registro:** las entradas de arriba consolidan el trabajo de varias sesiones de hardening (Fases 0 a 3 del informe de auditoría, más un apéndice de hallazgos adicionales) que ocurrieron antes de que este `CHANGELOG.md` existiera. A partir de esta versión, cada cambio visible para el usuario se documenta aquí en el mismo cambio que lo origina, no de forma retroactiva.
+**Nota sobre este primer registro:** las entradas de 0.1.0 consolidan el trabajo de varias sesiones de hardening (Fases 0 a 3 del informe de auditoría, más un apéndice de hallazgos adicionales) que ocurrieron antes de que este `CHANGELOG.md` existiera. A partir de esa versión, cada cambio visible para el usuario se documenta aquí en el mismo cambio que lo origina, no de forma retroactiva.

@@ -1,5 +1,7 @@
 # Mateo Support — Widget de Chat (React)
 
+**Versión de producto: 2.4.3** (Mateo Support, embebido en Polaria WMS)
+
 Widget de chat de soporte para **Mateo**, el asistente de IA de Polaria. Embebible en **polaria-wms-web** (Shadow DOM) o usable standalone. Habla con n8n (mismo workflow del canal web), sube imágenes a Cloudinary y, en embed, persiste el historial en Supabase vía el API WMS (`widget_*`).
 
 [![Build](https://img.shields.io/badge/build-manual-lightgrey)]() [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)]() [![i18n](https://img.shields.io/badge/i18n-es%20%7C%20en-blueviolet)]()
