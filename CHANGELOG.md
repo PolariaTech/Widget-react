@@ -2,7 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) | Versionado: [Semantic Versioning](https://semver.org/lang/es/)
 
-La versión de **producto** Polaria WMS (web + API + BD + este widget) es **2.4.3**. Los números 0.1.0 / 0.2.0 de abajo son el historial interno previo del widget.
+La versión de **producto** Polaria WMS (web + API + BD + este widget) es **2.4.9**. Los números 0.1.0 / 0.2.0 de abajo son el historial interno previo del widget.
+
+## [2.4.9] — 2026-09-03
+
+Alineado con Polaria WMS 2.4.9.
 
 ## [2.4.3] — 2026-08-29
 
