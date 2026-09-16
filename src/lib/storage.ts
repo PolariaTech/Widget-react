@@ -9,6 +9,14 @@ import type { Conversation, Message, MessageRole, MessageType } from '../types';
 import { t } from '../i18n';
 import { getEmbedRuntimeConfig } from './embedConfig';
 import { RemoteConversationRepository } from './conversationApi';
+import { coalesceImageCaptionMessages } from './imageCaption';
+
+export {
+  coalesceImageCaptionMessages,
+  decodeImageContent,
+  encodeImageContent,
+  IMAGE_CAPTION_SEP,
+} from './imageCaption';
 
 export const CONVERSATIONS_STORAGE_KEY = 'mateo_chat_conversations';
 
@@ -43,7 +51,8 @@ function isMessage(value: unknown): value is Message {
     (m.type === 'text' || m.type === 'image') &&
     typeof m.content === 'string' &&
     typeof m.timestamp === 'number' &&
-    (m.isError === undefined || typeof m.isError === 'boolean')
+    (m.isError === undefined || typeof m.isError === 'boolean') &&
+    (m.caption === undefined || typeof m.caption === 'string')
   );
 }
 
@@ -89,7 +98,12 @@ export function loadConversations(): Conversation[] {
         `Se descartaron ${rawList.length - valid.length} conversación(es) corrupta(s) del historial.`,
       );
     }
-    return backfillMissingTitles(valid);
+    return backfillMissingTitles(
+      valid.map((conv) => ({
+        ...conv,
+        messages: coalesceImageCaptionMessages(conv.messages),
+      })),
+    );
   } catch {
     return [];
   }
@@ -100,10 +114,10 @@ function backfillMissingTitles(conversations: Conversation[]): Conversation[] {
   return conversations.map((conv) => {
     if (conv.title?.trim()) return conv;
     const firstUser = conv.messages.find(
-      (m) => m.role === 'user' && !m.isError && m.content.trim(),
+      (m) => m.role === 'user' && !m.isError && (m.caption?.trim() || m.content.trim()),
     );
     if (!firstUser) return conv;
-    const title = titleFromUserMessage(firstUser.type, firstUser.content);
+    const title = titleFromUserMessage(firstUser.type, firstUser.content, firstUser.caption);
     return title ? { ...conv, title } : conv;
   });
 }
@@ -149,7 +163,7 @@ export class LocalStorageRepository implements ConversationRepository {
       message.type,
       message.content,
       message.timestamp,
-      undefined,
+      message.caption,
       message.isError,
     );
     saveConversations(next);
@@ -220,12 +234,12 @@ export function deriveConversationTitle(
   if (saved) return saved;
 
   const firstUser = conv.messages.find(
-    (m) => m.role === 'user' && !m.isError && m.content.trim(),
+    (m) => m.role === 'user' && !m.isError && (m.caption?.trim() || m.content.trim()),
   );
   if (!firstUser) return fallback;
 
   return (
-    titleFromUserMessage(firstUser.type, firstUser.content) ?? fallback
+    titleFromUserMessage(firstUser.type, firstUser.content, firstUser.caption) ?? fallback
   );
 }
 
@@ -260,11 +274,13 @@ export function addMessage(
     ? titleFromUserMessage(type, content, titleOverride) ?? conv.title
     : conv.title;
 
+  const caption = type === 'image' ? titleOverride?.trim() || undefined : undefined;
+
   const updated: Conversation = {
     ...conv,
     updatedAt: Date.now(),
     title: nextTitle,
-    messages: [...conv.messages, { role, type, content, timestamp, isError }],
+    messages: [...conv.messages, { role, type, content, timestamp, isError, ...(caption ? { caption } : {}) }],
   };
 
   const next = [...conversations];
@@ -293,6 +309,9 @@ export function replaceMessageContent(
   const existing = nextMessages[msgIndex];
   if (!existing) return conversations;
   nextMessages[msgIndex] = { ...existing, type: newType, content: newContent };
+  if (newType !== 'image') {
+    delete nextMessages[msgIndex].caption;
+  }
 
   const next = [...conversations];
   next[index] = { ...conv, messages: nextMessages };

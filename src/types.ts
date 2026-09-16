@@ -7,6 +7,8 @@ export interface Message {
   /** Texto del mensaje, o URL/Data URL de la imagen si `type` es `'image'`. */
   content: string;
   timestamp: number;
+  /** Pie de imagen (POL-245): texto enviado junto a la foto, no un mensaje aparte. */
+  caption?: string;
   /** `true` si este mensaje es un error (fallo de red/subida), no una respuesta real de Mateo — MessageBubble lo distingue visualmente. */
   isError?: boolean;
 }

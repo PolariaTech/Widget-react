@@ -22,7 +22,7 @@ El widget adjunta un JWT de vida corta (`Authorization: Bearer <jwt>`) en cada l
 | `iss` | `bodega-frio-v2` |
 | `aud` | `mateo-support-widget` |
 | `sub` | `usuario.id_auth` |
-| TTL | 300 s |
+| TTL | 43200 s (12 h) |
 
 Secreto: `MATEO_WIDGET_JWT_SECRET` en el API = credential store de n8n.
 
@@ -44,7 +44,7 @@ Tests: `src/embed.test.ts`, `src/lib/authToken.test.ts`, `src/lib/conversationAp
 | Dato | Dónde vive |
 |------|------------|
 | Historial (texto + URLs imagen) | API WMS + Supabase `widget_*` en embed; `localStorage` solo mirror |
-| JWT widget | Memoria del tab (~5 min) |
+| JWT widget | Memoria del tab (12 h) |
 | URL webhook n8n | Bundle / env (`VITE_N8N_WEBHOOK_URL`) |
 
 No hay PII de sistema pedida al visitante; lo que escriba en el chat es su responsabilidad.

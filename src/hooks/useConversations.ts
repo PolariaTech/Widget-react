@@ -72,6 +72,8 @@ export function useConversations(): UseConversationsResult {
   const [conversations, setConversations] = useState<Conversation[]>(() =>
     remote ? [] : loadConversations(),
   );
+  const conversationsRef = useRef<Conversation[]>(conversations);
+  conversationsRef.current = conversations;
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const currentConversationIdRef = useRef<string | null>(null);
 
@@ -167,7 +169,7 @@ export function useConversations(): UseConversationsResult {
       for (const msg of queue) {
         // No persistir Data URLs enormes en el backend
         if (msg.type === 'image' && msg.content.startsWith('data:')) continue;
-        if (!msg.content?.trim()) continue;
+        if (!msg.content?.trim() && !msg.caption?.trim()) continue;
         await repo.appendMessage(remoteId, msg);
       }
     } catch (err) {
@@ -348,7 +350,14 @@ export function useConversations(): UseConversationsResult {
       setConversations((prev) =>
         addMessageToList(prev, liveId, role, type, content, timestamp, titleOverride, isError),
       );
-      enqueueRemoteMessage(liveId, { role, type, content, timestamp, isError });
+      enqueueRemoteMessage(liveId, {
+        role,
+        type,
+        content,
+        timestamp,
+        isError,
+        caption: type === 'image' ? titleOverride?.trim() || undefined : undefined,
+      });
     },
     [enqueueRemoteMessage, resolveLiveConvId],
   );
@@ -362,6 +371,9 @@ export function useConversations(): UseConversationsResult {
       newType?: MessageType,
     ) => {
       const liveId = resolveLiveConvId(convId);
+      const existing = conversationsRef.current
+        .find((c) => c.id === liveId)
+        ?.messages.find((m) => m.type === type && m.timestamp === timestamp);
       setConversations((prev) =>
         replaceMessageContent(prev, liveId, type, timestamp, newContent, newType),
       );
@@ -371,6 +383,7 @@ export function useConversations(): UseConversationsResult {
         type: newType ?? type,
         content: newContent,
         timestamp,
+        caption: existing?.caption,
       });
     },
     [enqueueRemoteMessage, resolveLiveConvId],

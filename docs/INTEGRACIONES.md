@@ -32,7 +32,8 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
 {
   "message_text": "https://res.cloudinary.com/.../abc123.jpg",
   "message_type": "image",
-  "conversation_id": "897dcdc5-308a-40af-ba99-3359e4b3131a"
+  "conversation_id": "897dcdc5-308a-40af-ba99-3359e4b3131a",
+  "image_caption": "Hola mateo, no me funciona el chat"
 }
 ```
 
@@ -40,7 +41,7 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
 
 `phone_number` viene del claim JWT del widget (`usuario.telefono` en WMS) y también se reenvía en el body.
 
-`message_text` en imágenes es la `secure_url` de Cloudinary (nunca el Data URL local). Caption e imagen se envían como dos POSTs secuenciales si el usuario escribió texto junto a la imagen.
+`message_text` en imágenes es la `secure_url` de Cloudinary (nunca el Data URL local). Si el usuario escribió texto junto a la imagen, va en `image_caption` en el **mismo** POST (POL-245). El canal web de n8n debe mapear ese campo; hasta entonces Mateo sigue viendo la imagen sin el pie.
 
 ### Respuesta esperada — 200 OK
 

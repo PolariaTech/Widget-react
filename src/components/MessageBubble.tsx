@@ -42,7 +42,7 @@ export const MessageBubble = memo(function MessageBubble({
               <img
                 className="chat-image max-w-full rounded-[8px] max-h-[180px] object-contain block cursor-pointer hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#00E5CC] focus:ring-offset-2 focus:ring-offset-transparent"
                 src={message.content}
-                alt={t('sentImageAlt')}
+                alt={message.caption?.trim() || t('sentImageAlt')}
                 role="button"
                 tabIndex={0}
                 onClick={() => onImageClick?.(message.content)}
@@ -53,6 +53,11 @@ export const MessageBubble = memo(function MessageBubble({
                   }
                 }}
               />
+              {message.caption?.trim() ? (
+                <p className="chat-msg-text leading-[19px] text-[rgba(248,248,246,0.92)] whitespace-pre-wrap break-words px-[5px] pt-[8px]">
+                  <InlineText nodes={parseInline(message.caption)} />
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="bg-[rgba(0,229,204,0.08)] border border-[rgba(0,229,204,0.18)] rounded-bl-[14px] rounded-br-[4px] rounded-tl-[14px] rounded-tr-[14px] px-[13px] py-[9px]">

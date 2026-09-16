@@ -49,12 +49,12 @@
 | 3 | Sistema | Valida tamaño (≤5MB), tipo MIME permitido, y magic bytes reales del archivo | Si falla cualquiera, muestra el error correspondiente y no continúa (ver `docs/INTEGRACIONES.md`) |
 | 4 | Sistema | Muestra la miniatura de la imagen en el input, lista para enviar junto con texto opcional | — |
 | 5 | Visitante | Escribe un caption opcional y presiona enviar | — |
-| 6 | Sistema | Persiste de inmediato el mensaje de imagen con el Data URL local (para que se vea sin esperar), y el caption como mensaje de texto aparte si lo hay | El título de la conversación usa el caption si existe, en vez de "Imagen" genérico |
+| 6 | Sistema | Persiste de inmediato un único mensaje de imagen (Data URL local) y, si hay texto, lo guarda como pie de esa misma burbuja | El título de la conversación usa el pie si existe, en vez de "Imagen" genérico |
 | 7 | Sistema | Sube la imagen a Cloudinary en segundo plano | — |
 | 8 | Sistema | Reemplaza el Data URL local por la `secure_url` de Cloudinary | Evita que el base64 completo quede persistido para siempre en `localStorage` |
-| 9 | Sistema | Envía el mensaje de imagen (con la URL real) al webhook de n8n | Igual que el Flujo 1 desde aquí |
+| 9 | Sistema | Envía un solo POST al webhook de n8n (`message_type: image` + `image_caption` si hay texto) | Igual que el Flujo 1 desde aquí |
 
-**Postcondiciones:** la conversación tiene el mensaje de imagen (con URL de Cloudinary, no base64), el caption si existía, y la respuesta de Mateo.
+**Postcondiciones:** la conversación tiene un mensaje de usuario (imagen + pie si existía, con URL de Cloudinary, no base64) y una respuesta de Mateo.
 
 **Casos de error:**
 

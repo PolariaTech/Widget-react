@@ -8,8 +8,8 @@
  * `conversation_id` aísla la memoria de n8n (Simple Memory) por hilo del
  * historial — no por usuario.
  *
- * Cuando el usuario adjunta imagen CON texto, `useChat.ts` hace dos POSTs
- * secuenciales (imagen, luego texto).
+ * Imagen + texto van en un solo POST: `message_type: "image"` y
+ * `image_caption` (POL-245). El canal web de n8n aún debe mapear ese campo.
  */
 import { N8N_WEBHOOK_URL } from '../config';
 import { fetchWithTimeout } from './http';
@@ -20,6 +20,8 @@ import { speakerClaimsFromToken } from './jwtPayload';
 export interface OutgoingMessage {
   message_text: string;
   message_type: 'text' | 'image';
+  /** Pie de la imagen; solo en `message_type: "image"` cuando el usuario escribió texto. */
+  image_caption?: string;
   /** Id del hilo activo; n8n lo usa como session key de memoria. */
   conversation_id: string;
   /** Rol WMS del usuario logueado (mismo valor que claim JWT `idRol` / `rol`). */
@@ -39,8 +41,18 @@ export function buildTextMessage(text: string, conversationId: string): Outgoing
   return { message_text: text, message_type: 'text', conversation_id: conversationId };
 }
 
-export function buildImageMessage(imageUrl: string, conversationId: string): OutgoingMessage {
-  return { message_text: imageUrl, message_type: 'image', conversation_id: conversationId };
+export function buildImageMessage(
+  imageUrl: string,
+  conversationId: string,
+  caption?: string,
+): OutgoingMessage {
+  const image_caption = caption?.trim();
+  return {
+    message_text: imageUrl,
+    message_type: 'image',
+    conversation_id: conversationId,
+    ...(image_caption ? { image_caption } : {}),
+  };
 }
 
 /** Adjunta claims del JWT al body para que n8n/Mateo sepan quién habla. */

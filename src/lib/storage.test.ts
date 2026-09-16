@@ -11,6 +11,12 @@ import {
 } from './storage';
 import type { Conversation } from '../types';
 import { t } from '../i18n';
+import {
+  coalesceImageCaptionMessages,
+  decodeImageContent,
+  encodeImageContent,
+  IMAGE_CAPTION_SEP,
+} from './imageCaption';
 
 beforeEach(() => {
   localStorage.clear();
@@ -56,6 +62,8 @@ describe('addMessage', () => {
       'foto del pallet',
     );
     expect(result[0]?.title).toBe('foto del pallet');
+    expect(result[0]?.messages[0]?.caption).toBe('foto del pallet');
+    expect(result[0]?.messages).toHaveLength(1);
   });
 
   it('mejora el título "Imagen" cuando llega un caption de texto después', () => {
@@ -126,6 +134,28 @@ describe('replaceMessageContent', () => {
     const replaced = replaceMessageContent(withMsg, conv.id, 'image', 1000, 'No se pudo enviar la imagen.', 'text');
     expect(replaced[0]?.messages[0]?.type).toBe('text');
     expect(replaced[0]?.messages[0]?.content).toBe('No se pudo enviar la imagen.');
+  });
+
+  it('conserva el caption al reemplazar el Data URL por la URL de Cloudinary', () => {
+    const conv = createConversation();
+    const withMsg = addMessage(
+      [conv],
+      conv.id,
+      'user',
+      'image',
+      'data:image/png;base64,AAAA',
+      1000,
+      'pallet dañado',
+    );
+    const replaced = replaceMessageContent(
+      withMsg,
+      conv.id,
+      'image',
+      1000,
+      'https://cdn.example.com/img.png',
+    );
+    expect(replaced[0]?.messages[0]?.content).toBe('https://cdn.example.com/img.png');
+    expect(replaced[0]?.messages[0]?.caption).toBe('pallet dañado');
   });
 
   it('devuelve el arreglo sin cambios si no encuentra el mensaje', () => {
@@ -205,5 +235,47 @@ describe('loadConversations / saveConversations', () => {
     });
     const ok = saveConversations([createConversation()]);
     expect(ok).toBe(false);
+  });
+});
+
+describe('encodeImageContent / coalesceImageCaptionMessages', () => {
+  it('roundtrip de URL + pie en contenido del API', () => {
+    const encoded = encodeImageContent('https://cdn.example.com/img.png', 'pallet dañado');
+    expect(encoded).toContain(IMAGE_CAPTION_SEP);
+    expect(decodeImageContent(encoded)).toEqual({
+      url: 'https://cdn.example.com/img.png',
+      caption: 'pallet dañado',
+    });
+  });
+
+  it('no une un texto posterior con timestamp distinto', () => {
+    const merged = coalesceImageCaptionMessages([
+      { role: 'user', type: 'image', content: 'https://cdn.example.com/a.png', timestamp: 1 },
+      { role: 'user', type: 'text', content: 'pregunta aparte', timestamp: 2 },
+    ]);
+    expect(merged).toHaveLength(2);
+  });
+
+  it('une imagen y texto del mismo timestamp (historial partido pre POL-245)', () => {
+    const merged = coalesceImageCaptionMessages([
+      {
+        role: 'user',
+        type: 'image',
+        content: 'https://cdn.example.com/img.png',
+        timestamp: 1000,
+      },
+      {
+        role: 'user',
+        type: 'text',
+        content: 'pallet dañado',
+        timestamp: 1000,
+      },
+    ]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toMatchObject({
+      type: 'image',
+      content: 'https://cdn.example.com/img.png',
+      caption: 'pallet dañado',
+    });
   });
 });

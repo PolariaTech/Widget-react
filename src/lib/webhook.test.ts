@@ -37,6 +37,15 @@ describe('buildTextMessage / buildImageMessage', () => {
     });
   });
 
+  it('incluye image_caption cuando hay pie de foto (POL-245)', () => {
+    expect(buildImageMessage('https://cdn.example.com/img.png', 'conv_test', 'pallet dañado')).toEqual({
+      message_text: 'https://cdn.example.com/img.png',
+      message_type: 'image',
+      conversation_id: 'conv_test',
+      image_caption: 'pallet dañado',
+    });
+  });
+
   it('el body base incluye message_text, message_type y conversation_id', () => {
     const message = buildTextMessage('hola', 'conv_test');
     expect(Object.keys(message).sort()).toEqual([

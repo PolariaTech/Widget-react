@@ -62,4 +62,31 @@ describe('RemoteConversationRepository — auth POL-137', () => {
         (err instanceof Error && /fetcher/i.test(err.message)),
     );
   });
+
+  it('persiste imagen y pie en un solo contenido (POL-245)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    setEmbedRuntimeConfig({
+      conversationTokenFetcher: async () => ({ token: 'wms-bearer', expiresIn: 3600 }),
+    });
+
+    const repo = new RemoteConversationRepository('/api/mateo/conversaciones');
+    await repo.appendMessage('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', {
+      role: 'user',
+      type: 'image',
+      content: 'https://cdn.example.com/img.png',
+      caption: 'pallet dañado',
+      timestamp: 1_000,
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string) as { contenido: string; tipo: string };
+    expect(body.tipo).toBe('image');
+    expect(body.contenido).toBe(
+      `https://cdn.example.com/img.png\n<!--mateo-caption-->\npallet dañado`,
+    );
+  });
 });

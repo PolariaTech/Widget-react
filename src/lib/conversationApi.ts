@@ -10,6 +10,7 @@ import type { Conversation, Message } from '../types';
 import { getValidToken } from './authToken';
 import { getEmbedRuntimeConfig } from './embedConfig';
 import type { ConversationRepository } from './storage';
+import { coalesceImageCaptionMessages, decodeImageContent, encodeImageContent } from './imageCaption';
 
 interface ApiMensaje {
   idMensaje: string;
@@ -38,6 +39,17 @@ function toTimestamp(iso: string): number {
 }
 
 function mapMensaje(m: ApiMensaje): Message {
+  if (m.tipo === 'image') {
+    const { url, caption } = decodeImageContent(m.contenido);
+    return {
+      role: m.rol,
+      type: 'image',
+      content: url,
+      caption,
+      timestamp: toTimestamp(m.createdAt),
+      isError: m.esError || undefined,
+    };
+  }
   return {
     role: m.rol,
     type: m.tipo,
@@ -56,7 +68,7 @@ function mapConversacion(
     title: row.titulo,
     createdAt: toTimestamp(row.createdAt),
     updatedAt: toTimestamp(row.updatedAt),
-    messages: mensajes.map(mapMensaje),
+    messages: coalesceImageCaptionMessages(mensajes.map(mapMensaje)),
   };
 }
 
@@ -134,7 +146,10 @@ export class RemoteConversationRepository implements ConversationRepository {
       body: JSON.stringify({
         rol: message.role,
         tipo: message.type,
-        contenido: message.content,
+        contenido:
+          message.type === 'image'
+            ? encodeImageContent(message.content, message.caption)
+            : message.content,
         esError: message.isError ?? false,
         createdAt: new Date(message.timestamp).toISOString(),
       }),

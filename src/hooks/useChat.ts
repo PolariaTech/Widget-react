@@ -67,7 +67,6 @@ export function useChat({
           // caption, se usa como título de la conversación en vez del default
           // "Imagen" (ver storage.ts).
           addMessage(capturedConvId, 'user', 'image', capturedImage.data, sentAt, capturedText || undefined);
-          if (capturedText) addMessage(capturedConvId, 'user', 'text', capturedText, sentAt);
 
           if (typeof navigator !== 'undefined' && !navigator.onLine) {
             replaceMessage(capturedConvId, 'image', sentAt, t('imageSendFailed'), 'text');
@@ -94,18 +93,11 @@ export function useChat({
           // UUID de Supabase (o id local en standalone) — no el `conv_*` temporal.
           const n8nConvId = await resolveConversationIdForN8n(capturedConvId);
 
-          // El body plano de n8n no tiene un campo de caption aparte (ver
-          // webhook.ts) — la imagen y su caption (si la hay) se envían como
-          // dos mensajes secuenciales, cada uno con su propia respuesta de
-          // Mateo, igual que ya se muestran como dos burbujas de entrada
-          // separadas arriba.
-          const imageReply = await sendToN8n(buildImageMessage(imageUrl, n8nConvId));
+          // Un solo POST: URL en message_text + pie en image_caption (POL-245).
+          const imageReply = await sendToN8n(
+            buildImageMessage(imageUrl, n8nConvId, capturedText || undefined),
+          );
           addMessage(capturedConvId, 'ai', 'text', imageReply.text, Date.now(), undefined, imageReply.isError);
-
-          if (capturedText) {
-            const captionReply = await sendToN8n(buildTextMessage(capturedText, n8nConvId));
-            addMessage(capturedConvId, 'ai', 'text', captionReply.text, Date.now(), undefined, captionReply.isError);
-          }
         } else {
           addMessage(capturedConvId, 'user', 'text', capturedText, sentAt);
 
