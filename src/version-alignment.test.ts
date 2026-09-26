@@ -15,4 +15,13 @@ describe('product version 2.7.15', () => {
     expect(changelog).toContain('2.7.15');
     expect(changelog.includes('\u0000')).toBe(false);
   });
+
+  it('excluye tests del tsc de build (tsconfig.app)', () => {
+    const root = resolve(__dirname, '..');
+    const tsconfig = readFileSync(resolve(root, 'tsconfig.app.json'), 'utf8');
+    expect(tsconfig).toContain('"src/**/*.test.ts"');
+    expect(tsconfig).toContain('"src/**/*.test.tsx"');
+    expect(tsconfig).toContain('"src/**/*.spec.ts"');
+    expect(tsconfig).toContain('"src/**/*.spec.tsx"');
+  });
 });
