@@ -11,7 +11,7 @@ La versión de **producto** Polaria WMS (web + API + BD + este widget) es **2.7.
 
 ## [2.7.15] — 2026-09-25
 
-Alineado con Polaria WMS 2.7.15. La sesión del host (y el cierre del widget) dura **1 mes**; el handoff SSO no cambia.
+Alineado con Polaria WMS 2.7.15. La sesión del host (y el cierre del widget) dura **23 días**; el handoff SSO no cambia.
 
 ## [2.7.5] — 2026-09-17
 
@@ -30,7 +30,7 @@ Alineado con Polaria WMS 2.4.3.
 - Nombre de PDF en “ruta” como descarga cuando hay URL válida.
 
 ### Changed
-- El widget se cierra cuando caduca o se cierra la sesión de Polaria (antes 12 h; desde 2.7.15: 1 mes).
+- El widget se cierra cuando caduca o se cierra la sesión de Polaria (antes 12 h; desde 2.7.15: 23 días).
 
 ## [0.2.0] — 2026-07-16
 
