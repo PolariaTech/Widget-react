@@ -2,12 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) | Versionado: [Semantic Versioning](https://semver.org/lang/es/)
 
-La versión de **producto** Polaria WMS (web + API + BD + este widget) es **2.7.5**. Los números 0.1.0 / 0.2.0 de abajo son el historial interno previo del widget.
+La versión de **producto** Polaria WMS (web + API + BD + este widget) es **2.7.15**. Los números 0.1.0 / 0.2.0 de abajo son el historial interno previo del widget.
 
 ## [Unreleased]
 
 ### Fixed
 - POL-245: imagen y texto se envían como un solo mensaje de usuario y un solo POST a n8n (`image_caption`). El pie se muestra en la misma burbuja y se conserva en el historial.
+
+## [2.7.15] — 2026-09-25
+
+Alineado con Polaria WMS 2.7.15. La sesión del host (y el cierre del widget) dura **1 mes**; el handoff SSO no cambia.
 
 ## [2.7.5] — 2026-09-17
 
@@ -26,7 +30,7 @@ Alineado con Polaria WMS 2.4.3.
 - Nombre de PDF en “ruta” como descarga cuando hay URL válida.
 
 ### Changed
-- El widget se cierra cuando caduca o se cierra la sesión de Polaria (12 h).
+- El widget se cierra cuando caduca o se cierra la sesión de Polaria (antes 12 h; desde 2.7.15: 1 mes).
 
 ## [0.2.0] — 2026-07-16
 
