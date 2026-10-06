@@ -36,6 +36,7 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
   "conversation_id": "897dcdc5-308a-40af-ba99-3359e4b3131a",
   "message_id": "008bab9c-4f21-4b88-a901-0d2e3f4a5b6c",
   "image_url": "https://res.cloudinary.com/.../abc123.jpg",
+  "message_url": "https://res.cloudinary.com/.../abc123.jpg",
   "image_caption": "Hola mateo, no me funciona el chat"
 }
 ```
@@ -44,7 +45,7 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
 
 `message_id` es el **UUID** de `mateo_support.widget_mensaje.id_mensaje` (POL-291). El widget persiste el mensaje de usuario en la API, toma el `idMensaje` de la respuesta y lo envía en el body. En reintentos (p. ej. refresh JWT ante 401) se reutiliza el mismo valor para deduplicar en n8n. Va **solo en el body**.
 
-`image_url` es la `secure_url` de Cloudinary. Ya **no** va en `message_text`. En DB se guarda en `widget_mensaje.url_imagen`; el pie va en `contenido` y también en `image_caption` / `message_text` del body (compat POL-245).
+`image_url` es la `secure_url` de Cloudinary. Ya **no** va en `message_text`. En DB se guarda en `widget_mensaje.url_imagen`; el pie va en `contenido` y también en `image_caption` / `message_text` del body (compat POL-245). `message_url` es el mismo valor (alias para workflows n8n).
 
 `phone_number` viene del claim JWT del widget (`usuario.telefono` en WMS) y también se reenvía en el body.
 

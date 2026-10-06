@@ -135,6 +135,7 @@ describe('useChat — POL-245 imagen + texto', () => {
       conversation_id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
       message_id: REMOTE_MESSAGE_ID,
       image_url: 'https://cdn.example.com/img.png',
+      message_url: 'https://cdn.example.com/img.png',
     });
   });
 
