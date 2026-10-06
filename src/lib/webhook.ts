@@ -37,6 +37,11 @@ export interface OutgoingMessage {
    * La URL ya no va en `message_text`.
    */
   image_url?: string;
+  /**
+   * Alias de `image_url` para workflows n8n que leen `message_url`.
+   * Mismo valor; solo en `message_type: "image"`.
+   */
+  message_url?: string;
   /** Rol WMS del usuario logueado (mismo valor que claim JWT `idRol` / `rol`). */
   id_rol?: string;
   rol?: string;
@@ -77,6 +82,7 @@ export function buildImageMessage(
     conversation_id: conversationId,
     message_id: messageId,
     image_url: imageUrl,
+    message_url: imageUrl,
     ...(image_caption ? { image_caption } : {}),
   };
 }

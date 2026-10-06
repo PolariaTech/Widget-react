@@ -30,13 +30,14 @@ describe('buildTextMessage / buildImageMessage', () => {
     });
   });
 
-  it('arma un body plano de imagen con image_url (no la URL en message_text)', () => {
+  it('arma un body plano de imagen con image_url y message_url (no la URL en message_text)', () => {
     expect(buildImageMessage('https://cdn.example.com/img.png', 'conv_test', 'msg_2')).toEqual({
       message_text: '',
       message_type: 'image',
       conversation_id: 'conv_test',
       message_id: 'msg_2',
       image_url: 'https://cdn.example.com/img.png',
+      message_url: 'https://cdn.example.com/img.png',
     });
   });
 
@@ -49,6 +50,7 @@ describe('buildTextMessage / buildImageMessage', () => {
       conversation_id: 'conv_test',
       message_id: 'msg_3',
       image_url: 'https://cdn.example.com/img.png',
+      message_url: 'https://cdn.example.com/img.png',
       image_caption: 'pallet dañado',
     });
   });
