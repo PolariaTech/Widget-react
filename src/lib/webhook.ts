@@ -1,15 +1,18 @@
 /**
  * webhook.ts — Construcción y envío del payload al backend de n8n (POL-72).
  *
- * Body: `{ message_text, message_type, conversation_id }` + identidad del
- * hablante (`id_rol`, `rol`, `id_usuario`, …) leída del JWT. La autenticación
+ * Body: `{ message_text, message_type, conversation_id, message_id }` + identidad
+ * del hablante (`id_rol`, `rol`, `id_usuario`, …) leída del JWT. La autenticación
  * sigue yendo en `Authorization: Bearer <jwt>` (validado en n8n, POL-71).
  *
  * `conversation_id` aísla la memoria de n8n (Simple Memory) por hilo del
  * historial — no por usuario.
  *
- * Imagen + texto van en un solo POST: `message_type: "image"` y
- * `image_caption` (POL-245). El canal web de n8n aún debe mapear ese campo.
+ * `message_id` es el `id_mensaje` de `widget_mensaje` (POL-291): clave estable
+ * por mensaje de usuario para deduplicar reintentos en el orquestador.
+ *
+ * Imagen: `image_url` = secure_url Cloudinary; `message_text` = pie (si hay);
+ * `image_caption` se mantiene por compatibilidad con n8n (POL-245).
  */
 import { N8N_WEBHOOK_URL } from '../config';
 import { fetchWithTimeout } from './http';
@@ -24,6 +27,16 @@ export interface OutgoingMessage {
   image_caption?: string;
   /** Id del hilo activo; n8n lo usa como session key de memoria. */
   conversation_id: string;
+  /**
+   * Id estable del mensaje de usuario (`widget_mensaje.id_mensaje` en embed).
+   * Mismo valor en reintentos (p. ej. refresh JWT 401).
+   */
+  message_id: string;
+  /**
+   * URL Cloudinary (secure_url). Solo en `message_type: "image"`.
+   * La URL ya no va en `message_text`.
+   */
+  image_url?: string;
   /** Rol WMS del usuario logueado (mismo valor que claim JWT `idRol` / `rol`). */
   id_rol?: string;
   rol?: string;
@@ -37,20 +50,33 @@ export interface OutgoingMessage {
   codigo_cuenta?: string | null;
 }
 
-export function buildTextMessage(text: string, conversationId: string): OutgoingMessage {
-  return { message_text: text, message_type: 'text', conversation_id: conversationId };
+export function buildTextMessage(
+  text: string,
+  conversationId: string,
+  messageId: string,
+): OutgoingMessage {
+  return {
+    message_text: text,
+    message_type: 'text',
+    conversation_id: conversationId,
+    message_id: messageId,
+  };
 }
 
 export function buildImageMessage(
   imageUrl: string,
   conversationId: string,
+  messageId: string,
   caption?: string,
 ): OutgoingMessage {
   const image_caption = caption?.trim();
   return {
-    message_text: imageUrl,
+    // Texto del usuario (pie); la URL ya no va aquí (POL-291 / image_url).
+    message_text: image_caption ?? '',
     message_type: 'image',
     conversation_id: conversationId,
+    message_id: messageId,
+    image_url: imageUrl,
     ...(image_caption ? { image_caption } : {}),
   };
 }

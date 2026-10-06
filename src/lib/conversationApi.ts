@@ -10,13 +10,15 @@ import type { Conversation, Message } from '../types';
 import { getValidToken } from './authToken';
 import { getEmbedRuntimeConfig } from './embedConfig';
 import type { ConversationRepository } from './storage';
-import { coalesceImageCaptionMessages, decodeImageContent, encodeImageContent } from './imageCaption';
+import { coalesceImageCaptionMessages, decodeImageContent } from './imageCaption';
 
 interface ApiMensaje {
   idMensaje: string;
   rol: 'user' | 'ai';
   tipo: 'text' | 'image';
   contenido: string;
+  /** URL Cloudinary cuando tipo = image (columna url_imagen). */
+  urlImagen?: string | null;
   esError: boolean;
   createdAt: string;
 }
@@ -40,8 +42,22 @@ function toTimestamp(iso: string): number {
 
 function mapMensaje(m: ApiMensaje): Message {
   if (m.tipo === 'image') {
+    // Preferir columna url_imagen; fallback al encoding legacy en contenido.
+    if (m.urlImagen?.trim()) {
+      const caption = m.contenido.trim() || undefined;
+      return {
+        id: m.idMensaje,
+        role: m.rol,
+        type: 'image',
+        content: m.urlImagen.trim(),
+        caption,
+        timestamp: toTimestamp(m.createdAt),
+        isError: m.esError || undefined,
+      };
+    }
     const { url, caption } = decodeImageContent(m.contenido);
     return {
+      id: m.idMensaje,
       role: m.rol,
       type: 'image',
       content: url,
@@ -51,6 +67,7 @@ function mapMensaje(m: ApiMensaje): Message {
     };
   }
   return {
+    id: m.idMensaje,
     role: m.rol,
     type: m.tipo,
     content: m.contenido,
@@ -139,17 +156,21 @@ export class RemoteConversationRepository implements ConversationRepository {
     return mapConversacion(row, row.mensajes ?? []);
   }
 
-  async appendMessage(id: string, message: Message): Promise<void> {
+  /**
+   * Persiste el mensaje y devuelve `idMensaje` (`widget_mensaje.id_mensaje`)
+   * para usarlo como `message_id` hacia n8n (POL-291).
+   */
+  async appendMessage(id: string, message: Message): Promise<string> {
+    const isImage = message.type === 'image';
     const res = await fetch(this.url(`${id}/mensajes`), {
       method: 'POST',
       headers: await this.authHeaders(),
       body: JSON.stringify({
         rol: message.role,
         tipo: message.type,
-        contenido:
-          message.type === 'image'
-            ? encodeImageContent(message.content, message.caption)
-            : message.content,
+        // Texto / pie: ya no embebemos la URL en contenido.
+        contenido: isImage ? message.caption?.trim() || '' : message.content,
+        ...(isImage ? { urlImagen: message.content } : {}),
         esError: message.isError ?? false,
         createdAt: new Date(message.timestamp).toISOString(),
       }),
@@ -157,6 +178,11 @@ export class RemoteConversationRepository implements ConversationRepository {
     if (!res.ok) {
       throw new Error(`No se pudo guardar mensaje (${res.status})`);
     }
+    const row = (await res.json()) as Pick<ApiMensaje, 'idMensaje'>;
+    if (typeof row.idMensaje !== 'string' || !row.idMensaje.trim()) {
+      throw new Error('La API no devolvió idMensaje al guardar el mensaje');
+    }
+    return row.idMensaje.trim();
   }
 
   async delete(id: string): Promise<void> {

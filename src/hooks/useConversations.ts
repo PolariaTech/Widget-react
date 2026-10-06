@@ -12,6 +12,7 @@ import {
   getConversationRepository,
   isRemoteConversationMode,
   loadConversations,
+  newMessageId,
   replaceMessageContent,
   saveConversations,
 } from '../lib/storage';
@@ -40,6 +41,11 @@ export interface UseConversationsResult {
    * (espera el create si aún va `conv_*`). En local: el id de la conversación.
    */
   resolveConversationIdForN8n: (convId: string) => Promise<string>;
+  /**
+   * Persiste el mensaje de usuario y devuelve `message_id` para n8n (POL-291).
+   * En embed = `widget_mensaje.id_mensaje` de la API; en local = id generado.
+   */
+  persistUserMessageForN8n: (convId: string, message: Message) => Promise<string>;
   addMessage: (
     convId: string,
     role: MessageRole,
@@ -48,6 +54,8 @@ export interface UseConversationsResult {
     timestamp?: number,
     titleOverride?: string,
     isError?: boolean,
+    /** Si false, solo actualiza UI local (el caller persistirá antes de n8n). Default true. */
+    syncRemote?: boolean,
   ) => void;
   replaceMessage: (
     convId: string,
@@ -55,6 +63,7 @@ export interface UseConversationsResult {
     timestamp: number,
     newContent: string,
     newType?: MessageType,
+    syncRemote?: boolean,
   ) => void;
   startNewConversation: () => void;
   loadConversation: (id: string) => void;
@@ -344,12 +353,14 @@ export function useConversations(): UseConversationsResult {
       timestamp: number = Date.now(),
       titleOverride?: string,
       isError?: boolean,
+      syncRemote: boolean = true,
     ) => {
       // Tras create remoto el id pasa de conv_* → UUID; useChat sigue con el id local.
       const liveId = resolveLiveConvId(convId);
       setConversations((prev) =>
         addMessageToList(prev, liveId, role, type, content, timestamp, titleOverride, isError),
       );
+      if (!syncRemote) return;
       enqueueRemoteMessage(liveId, {
         role,
         type,
@@ -369,6 +380,7 @@ export function useConversations(): UseConversationsResult {
       timestamp: number,
       newContent: string,
       newType?: MessageType,
+      syncRemote: boolean = true,
     ) => {
       const liveId = resolveLiveConvId(convId);
       const existing = conversationsRef.current
@@ -377,6 +389,7 @@ export function useConversations(): UseConversationsResult {
       setConversations((prev) =>
         replaceMessageContent(prev, liveId, type, timestamp, newContent, newType),
       );
+      if (!syncRemote) return;
       // Sync del contenido final (p. ej. URL Cloudinary tras reemplazar data URL)
       enqueueRemoteMessage(liveId, {
         role: 'user',
@@ -387,6 +400,21 @@ export function useConversations(): UseConversationsResult {
       });
     },
     [enqueueRemoteMessage, resolveLiveConvId],
+  );
+
+  /**
+   * Guarda el mensaje de usuario y devuelve el id para el body de n8n (POL-291).
+   * En embed espera el `id_mensaje` de la API; en local genera un id estable.
+   */
+  const persistUserMessageForN8n = useCallback(
+    async (convId: string, message: Message): Promise<string> => {
+      if (!remote) {
+        return message.id?.trim() || newMessageId();
+      }
+      const remoteId = await resolveConversationIdForN8n(convId);
+      return repo.appendMessage(remoteId, message);
+    },
+    [remote, repo, resolveConversationIdForN8n],
   );
 
   const startNewConversation = useCallback(() => {
@@ -459,6 +487,7 @@ export function useConversations(): UseConversationsResult {
     visibleMessages,
     ensureConversation,
     resolveConversationIdForN8n,
+    persistUserMessageForN8n,
     addMessage,
     replaceMessage,
     startNewConversation,

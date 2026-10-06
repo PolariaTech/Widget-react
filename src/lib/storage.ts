@@ -37,7 +37,8 @@ export interface ConversationRepository {
   list(): Promise<Conversation[]>;
   create(titulo?: string | null): Promise<Conversation>;
   getDetail(id: string): Promise<Conversation>;
-  appendMessage(id: string, message: Message): Promise<void>;
+  /** Persiste el mensaje y devuelve su id (`id_mensaje` remoto o id local). */
+  appendMessage(id: string, message: Message): Promise<string>;
   delete(id: string): Promise<void>;
   /** Persistencia completa (solo local / cache). Remoto no-op o mirror. */
   saveAll?(conversations: Conversation[]): Promise<boolean>;
@@ -52,7 +53,8 @@ function isMessage(value: unknown): value is Message {
     typeof m.content === 'string' &&
     typeof m.timestamp === 'number' &&
     (m.isError === undefined || typeof m.isError === 'boolean') &&
-    (m.caption === undefined || typeof m.caption === 'string')
+    (m.caption === undefined || typeof m.caption === 'string') &&
+    (m.id === undefined || typeof m.id === 'string')
   );
 }
 
@@ -154,7 +156,8 @@ export class LocalStorageRepository implements ConversationRepository {
     return found;
   }
 
-  async appendMessage(id: string, message: Message): Promise<void> {
+  async appendMessage(id: string, message: Message): Promise<string> {
+    const messageId = message.id?.trim() || newMessageId();
     const all = loadConversations();
     const next = addMessage(
       all,
@@ -167,6 +170,7 @@ export class LocalStorageRepository implements ConversationRepository {
       message.isError,
     );
     saveConversations(next);
+    return messageId;
   }
 
   async delete(id: string): Promise<void> {
@@ -189,6 +193,15 @@ export function getConversationRepository(): ConversationRepository {
 
 export function isRemoteConversationMode(): boolean {
   return Boolean(getEmbedRuntimeConfig().conversationApiBase);
+}
+
+/**
+ * Id de mensaje local (standalone / fallback). Mismo patrón que ADR-0004 —
+ * sin `crypto.randomUUID()` para no romper contextos no-HTTPS.
+ * En embed el id real viene de `widget_mensaje.id_mensaje` vía API.
+ */
+export function newMessageId(): string {
+  return 'msg_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
 /** Crea una nueva conversación vacía. */
