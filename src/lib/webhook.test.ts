@@ -22,34 +22,42 @@ afterEach(() => {
 
 describe('buildTextMessage / buildImageMessage', () => {
   it('arma un body plano de texto sin envoltura de WhatsApp', () => {
-    expect(buildTextMessage('hola', 'conv_test')).toEqual({
+    expect(buildTextMessage('hola', 'conv_test', 'msg_1')).toEqual({
       message_text: 'hola',
       message_type: 'text',
       conversation_id: 'conv_test',
+      message_id: 'msg_1',
     });
   });
 
-  it('arma un body plano de imagen usando la URL como message_text', () => {
-    expect(buildImageMessage('https://cdn.example.com/img.png', 'conv_test')).toEqual({
-      message_text: 'https://cdn.example.com/img.png',
+  it('arma un body plano de imagen con image_url (no la URL en message_text)', () => {
+    expect(buildImageMessage('https://cdn.example.com/img.png', 'conv_test', 'msg_2')).toEqual({
+      message_text: '',
       message_type: 'image',
       conversation_id: 'conv_test',
+      message_id: 'msg_2',
+      image_url: 'https://cdn.example.com/img.png',
     });
   });
 
-  it('incluye image_caption cuando hay pie de foto (POL-245)', () => {
-    expect(buildImageMessage('https://cdn.example.com/img.png', 'conv_test', 'pallet dañado')).toEqual({
-      message_text: 'https://cdn.example.com/img.png',
+  it('incluye image_caption y message_text con el pie (POL-245)', () => {
+    expect(
+      buildImageMessage('https://cdn.example.com/img.png', 'conv_test', 'msg_3', 'pallet dañado'),
+    ).toEqual({
+      message_text: 'pallet dañado',
       message_type: 'image',
       conversation_id: 'conv_test',
+      message_id: 'msg_3',
+      image_url: 'https://cdn.example.com/img.png',
       image_caption: 'pallet dañado',
     });
   });
 
-  it('el body base incluye message_text, message_type y conversation_id', () => {
-    const message = buildTextMessage('hola', 'conv_test');
+  it('el body base incluye message_text, message_type, conversation_id y message_id', () => {
+    const message = buildTextMessage('hola', 'conv_test', 'msg_4');
     expect(Object.keys(message).sort()).toEqual([
       'conversation_id',
+      'message_id',
       'message_text',
       'message_type',
     ]);
@@ -83,7 +91,7 @@ describe('sendToN8n', () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ output: 'hola, soy Mateo' }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
 
     expect(reply).toEqual({ text: 'hola, soy Mateo', isError: false });
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -95,6 +103,7 @@ describe('sendToN8n', () => {
       message_text: 'hola',
       message_type: 'text',
       conversation_id: 'conv_test',
+      message_id: 'msg_test',
       id_rol: 'operador_cuenta',
       rol: 'operador_cuenta',
       id_usuario: 'usr-1',
@@ -110,7 +119,7 @@ describe('sendToN8n', () => {
     configureTokenFetcher(async () => ({ token: 'jwt-valid', expiresIn: 300 }));
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ reply: 'segunda forma' })));
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
     expect(reply).toEqual({ text: 'segunda forma', isError: false });
   });
 
@@ -121,7 +130,7 @@ describe('sendToN8n', () => {
       vi.fn().mockResolvedValue(jsonResponse([{ output: 'hola desde array' }])),
     );
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
     expect(reply).toEqual({ text: 'hola desde array', isError: false });
   });
 
@@ -139,7 +148,7 @@ describe('sendToN8n', () => {
       ),
     );
 
-    const reply = await sendToN8n(buildTextMessage('dame tabla', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('dame tabla', 'conv_test', 'msg_test'));
     expect(reply.isError).toBe(false);
     expect(reply.text).toContain('Ticket | Estado');
     expect(reply.text).toContain('T-1 | Abierto');
@@ -150,7 +159,7 @@ describe('sendToN8n', () => {
     configureTokenFetcher(async () => ({ token: 'jwt-valid', expiresIn: 300 }));
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ unexpected: true })));
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
     expect(reply).toEqual({ text: t('webhookUnexpectedReply'), isError: true });
   });
 
@@ -158,7 +167,7 @@ describe('sendToN8n', () => {
     configureTokenFetcher(async () => ({ token: 'jwt-valid', expiresIn: 300 }));
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('boom', { status: 500 })));
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
     expect(reply).toEqual({ text: t('webhookConnectionError'), isError: true });
   });
 
@@ -167,7 +176,7 @@ describe('sendToN8n', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
 
     expect(reply).toEqual({ text: t('webhookAuthError'), isError: true });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -183,7 +192,7 @@ describe('sendToN8n', () => {
       .mockResolvedValueOnce(jsonResponse({ output: 'respuesta tras reintentar' }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
 
     expect(reply).toEqual({ text: 'respuesta tras reintentar', isError: false });
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -203,7 +212,7 @@ describe('sendToN8n', () => {
       .mockResolvedValueOnce(new Response('unauthorized again', { status: 401 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
 
     expect(reply).toEqual({ text: t('webhookAuthError'), isError: true });
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -222,7 +231,7 @@ describe('sendToN8n', () => {
       .mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
 
     expect(reply).toEqual({ text: t('webhookAuthError'), isError: true });
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -235,7 +244,7 @@ describe('sendToN8n', () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(new Response('unauthorized', { status: 401 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test'));
+    const reply = await sendToN8n(buildTextMessage('hola', 'conv_test', 'msg_test'));
 
     expect(reply).toEqual({ text: t('webhookAuthError'), isError: true });
     expect(fetchMock).toHaveBeenCalledTimes(1);

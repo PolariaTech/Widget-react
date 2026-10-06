@@ -14,6 +14,7 @@ function App() {
   const chat = useChat({
     ensureConversation: conv.ensureConversation,
     resolveConversationIdForN8n: conv.resolveConversationIdForN8n,
+    persistUserMessageForN8n: conv.persistUserMessageForN8n,
     addMessage: conv.addMessage,
     replaceMessage: conv.replaceMessage,
   });

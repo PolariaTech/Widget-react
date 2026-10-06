@@ -22,7 +22,8 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
 {
   "message_text": "¿Cómo descongelo la cámara 2?",
   "message_type": "text",
-  "conversation_id": "897dcdc5-308a-40af-ba99-3359e4b3131a"
+  "conversation_id": "897dcdc5-308a-40af-ba99-3359e4b3131a",
+  "message_id": "0053d141-8a76-4ae5-9c12-01135a1b2c3d"
 }
 ```
 
@@ -30,18 +31,22 @@ El widget envía cada mensaje del usuario al workflow de n8n del canal web con u
 
 ```json
 {
-  "message_text": "https://res.cloudinary.com/.../abc123.jpg",
+  "message_text": "Hola mateo, no me funciona el chat",
   "message_type": "image",
   "conversation_id": "897dcdc5-308a-40af-ba99-3359e4b3131a",
+  "message_id": "008bab9c-4f21-4b88-a901-0d2e3f4a5b6c",
+  "image_url": "https://res.cloudinary.com/.../abc123.jpg",
   "image_caption": "Hola mateo, no me funciona el chat"
 }
 ```
 
 `conversation_id` es el **UUID** de `mateo_support.widget_conversacion.id_conversacion` (en embed). n8n debe usarlo como session key de Simple Memory (no el `id_usuario`). El widget espera el create remoto antes de POST a n8n para no enviar el id temporal `conv_*`. Va **solo en el body** (no en el JWT).
 
-`phone_number` viene del claim JWT del widget (`usuario.telefono` en WMS) y también se reenvía en el body.
+`message_id` es el **UUID** de `mateo_support.widget_mensaje.id_mensaje` (POL-291). El widget persiste el mensaje de usuario en la API, toma el `idMensaje` de la respuesta y lo envía en el body. En reintentos (p. ej. refresh JWT ante 401) se reutiliza el mismo valor para deduplicar en n8n. Va **solo en el body**.
 
-`message_text` en imágenes es la `secure_url` de Cloudinary (nunca el Data URL local). Si el usuario escribió texto junto a la imagen, va en `image_caption` en el **mismo** POST (POL-245). El canal web de n8n debe mapear ese campo; hasta entonces Mateo sigue viendo la imagen sin el pie.
+`image_url` es la `secure_url` de Cloudinary. Ya **no** va en `message_text`. En DB se guarda en `widget_mensaje.url_imagen`; el pie va en `contenido` y también en `image_caption` / `message_text` del body (compat POL-245).
+
+`phone_number` viene del claim JWT del widget (`usuario.telefono` en WMS) y también se reenvía en el body.
 
 ### Respuesta esperada — 200 OK
 
@@ -68,7 +73,7 @@ También `{ "reply": "..." }` o `{ "text": "..." }` (en ese orden). Si el body n
 curl -X POST "$VITE_N8N_WEBHOOK_URL" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <widget_jwt>" \
-  -d '{"message_text":"prueba manual","message_type":"text","conversation_id":"897dcdc5-308a-40af-ba99-3359e4b3131a"}'
+  -d '{"message_text":"prueba manual","message_type":"text","conversation_id":"897dcdc5-308a-40af-ba99-3359e4b3131a","message_id":"0053d141-8a76-4ae5-9c12-01135a1b2c3d"}'
 ```
 
 ## 2. Cloudinary (subida de imágenes)

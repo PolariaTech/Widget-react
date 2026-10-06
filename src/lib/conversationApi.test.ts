@@ -63,10 +63,10 @@ describe('RemoteConversationRepository — auth POL-137', () => {
     );
   });
 
-  it('persiste imagen y pie en un solo contenido (POL-245)', async () => {
+  it('persiste imagen con urlImagen y pie en contenido (POL-245 / url_imagen)', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({}),
+      json: async () => ({ idMensaje: '0053d141-8a76-4ae5-9c12-01135a1b2c3d' }),
     });
     vi.stubGlobal('fetch', fetchMock);
     setEmbedRuntimeConfig({
@@ -74,7 +74,7 @@ describe('RemoteConversationRepository — auth POL-137', () => {
     });
 
     const repo = new RemoteConversationRepository('/api/mateo/conversaciones');
-    await repo.appendMessage('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', {
+    const idMensaje = await repo.appendMessage('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', {
       role: 'user',
       type: 'image',
       content: 'https://cdn.example.com/img.png',
@@ -82,11 +82,15 @@ describe('RemoteConversationRepository — auth POL-137', () => {
       timestamp: 1_000,
     });
 
+    expect(idMensaje).toBe('0053d141-8a76-4ae5-9c12-01135a1b2c3d');
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string) as { contenido: string; tipo: string };
+    const body = JSON.parse(init.body as string) as {
+      contenido: string;
+      tipo: string;
+      urlImagen: string;
+    };
     expect(body.tipo).toBe('image');
-    expect(body.contenido).toBe(
-      `https://cdn.example.com/img.png\n<!--mateo-caption-->\npallet dañado`,
-    );
+    expect(body.urlImagen).toBe('https://cdn.example.com/img.png');
+    expect(body.contenido).toBe('pallet dañado');
   });
 });
