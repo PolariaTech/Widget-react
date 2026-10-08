@@ -6,12 +6,15 @@ La versión de **producto** Polaria WMS (web + API + BD + este widget) es **2.7.
 
 ## [Unreleased]
 
+### Changed
+- Sesión del host (y cierre del widget): **7 días**, alineado a Polaria WMS.
+
 ### Fixed
 - POL-245: imagen y texto se envían como un solo mensaje de usuario y un solo POST a n8n (`image_caption`). El pie se muestra en la misma burbuja y se conserva en el historial.
 
 ## [2.7.15] — 2026-09-25
 
-Alineado con Polaria WMS 2.7.15. La sesión del host (y el cierre del widget) dura **23 días**; el handoff SSO no cambia.
+Alineado con Polaria WMS 2.7.15. La sesión del host (y el cierre del widget) sigue el TTL de Polaria WMS; el handoff SSO no cambia.
 
 ## [2.7.5] — 2026-09-17
 
@@ -30,7 +33,7 @@ Alineado con Polaria WMS 2.4.3.
 - Nombre de PDF en “ruta” como descarga cuando hay URL válida.
 
 ### Changed
-- El widget se cierra cuando caduca o se cierra la sesión de Polaria (antes 12 h; desde 2.7.15: 23 días).
+- El widget se cierra cuando caduca o se cierra la sesión de Polaria.
 
 ## [0.2.0] — 2026-07-16
 
